@@ -1,20 +1,25 @@
 
 import React, { useMemo, useState } from 'react';
-import { StudentRecord } from '../types';
+import { StudentRecord, StudentMetadata } from '../types';
 import { LOGO_URL } from '../constants';
 import { formatMinutes } from '../utils/calculations';
 
 interface Props {
   data: StudentRecord[];
+  students: StudentMetadata[];
   onBack: () => void;
 }
 
-const MonthlyReport: React.FC<Props> = ({ data, onBack }) => {
+const MonthlyReport: React.FC<Props> = ({ data, students, onBack }) => {
   const currentYear = new Date().getFullYear();
   const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
   
   const [selectedYear, setSelectedYear] = useState(currentYear.toString());
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+
+  const studentMap = useMemo(() => {
+    return new Map(students.map(s => [s.id, s]));
+  }, [students]);
 
   const monthsAr = [
     { value: "01", label: "يناير" },
@@ -43,7 +48,6 @@ const MonthlyReport: React.FC<Props> = ({ data, onBack }) => {
     const dailyAgg: Record<string, { date: string; totalStudents: number; totalDelayed: number; totalMinutes: number }> = {};
 
     filteredMonthData.forEach(r => {
-      // Student Aggregation
       if (!studentAgg[r.id]) {
         studentAgg[r.id] = { id: r.id, name: r.name, daysPresent: 0, daysLate: 0, totalMinutes: 0 };
       }
@@ -53,7 +57,6 @@ const MonthlyReport: React.FC<Props> = ({ data, onBack }) => {
         studentAgg[r.id].totalMinutes += r.delayMinutes;
       }
 
-      // Daily Aggregation
       if (!dailyAgg[r.date]) {
         dailyAgg[r.date] = { date: r.date, totalStudents: 0, totalDelayed: 0, totalMinutes: 0 };
       }
@@ -65,10 +68,15 @@ const MonthlyReport: React.FC<Props> = ({ data, onBack }) => {
     });
 
     return {
-      students: Object.values(studentAgg).sort((a, b) => b.totalMinutes - a.totalMinutes),
+      students: Object.values(studentAgg).sort((a, b) => b.daysLate - a.daysLate || b.totalMinutes - a.totalMinutes),
       daily: Object.values(dailyAgg).sort((a, b) => a.date.localeCompare(b.date))
     };
   }, [filteredMonthData]);
+
+  // الطلاب الذين لديهم 3 تأخيرات فأكثر
+  const highDelayStudents = useMemo(() => {
+    return aggregations.students.filter(s => s.daysLate >= 3);
+  }, [aggregations.students]);
 
   const handlePrint = () => {
     window.print();
@@ -193,11 +201,11 @@ const MonthlyReport: React.FC<Props> = ({ data, onBack }) => {
             </div>
         </div>
 
-        {/* Section 2: Student Summary */}
+        {/* Section 2: Student Summary - Modified for 3+ delays */}
         <div style={{ pageBreakInside: 'avoid' }}>
             <h3 className="text-md font-black text-slate-900 mb-4 flex items-center gap-2">
                 <span className="w-1 h-5 bg-emerald-600 rounded-full"></span>
-                ثانياً: الطلاب الأكثر تأخيراً (مرات التكرار)
+                ثانياً: الطلاب الأكثر تأخيراً (٣ مرات فأكثر)
             </h3>
             <div className="rounded-2xl overflow-hidden border border-slate-100 bg-slate-50">
                 <table className="w-full border-collapse">
@@ -205,26 +213,36 @@ const MonthlyReport: React.FC<Props> = ({ data, onBack }) => {
                         <tr className="bg-slate-200/50 border-b border-slate-200">
                             <th className="p-3 text-right text-[9px] font-black text-slate-500 uppercase">اسم الطالب</th>
                             <th className="p-3 text-center text-[9px] font-black text-slate-500 uppercase">الهوية</th>
+                            <th className="p-3 text-center text-[9px] font-black text-slate-500 uppercase">الصف</th>
+                            <th className="p-3 text-center text-[9px] font-black text-slate-500 uppercase">الفصل</th>
                             <th className="p-3 text-center text-[9px] font-black text-slate-500 uppercase">الحضور</th>
                             <th className="p-3 text-center text-[9px] font-black text-slate-500 uppercase">التأخير</th>
                             <th className="p-3 text-center text-[9px] font-black text-slate-500 uppercase">المدة الإجمالية</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {aggregations.students.length > 0 ? aggregations.students.slice(0, 20).map(s => (
-                            <tr key={s.id} className={`border-b border-white last:border-0 hover:bg-white transition-colors ${s.daysLate > 3 ? "bg-red-50/20" : ""}`}>
-                                <td className="p-2 text-right text-xs font-black text-slate-800">{s.name}</td>
-                                <td className="p-2 text-center text-xs font-mono text-slate-400">{s.id}</td>
-                                <td className="p-2 text-center text-xs font-bold">{s.daysPresent}</td>
-                                <td className="p-2 text-center text-xs font-black text-red-600">{s.daysLate}</td>
-                                <td className="p-2 text-center text-xs font-bold text-emerald-800">{formatMinutes(s.totalMinutes)}</td>
-                            </tr>
-                        )) : (
-                            <tr><td colSpan={5} className="p-10 text-center text-slate-400 text-xs italic">لا توجد سجلات طلاب لهذا الشهر</td></tr>
+                        {highDelayStudents.length > 0 ? highDelayStudents.map(s => {
+                            const meta = studentMap.get(s.id);
+                            return (
+                                <tr key={s.id} className={`border-b border-white last:border-0 hover:bg-white transition-colors ${s.daysLate >= 5 ? "bg-red-50/20" : ""}`}>
+                                    <td className="p-2 text-right text-xs font-black text-slate-800">{s.name}</td>
+                                    <td className="p-2 text-center text-xs font-mono text-slate-400">{s.id}</td>
+                                    <td className="p-2 text-center text-[10px] text-slate-500">{meta?.className || "—"}</td>
+                                    <td className="p-2 text-center text-[10px] text-slate-500">{meta?.section || "—"}</td>
+                                    <td className="p-2 text-center text-xs font-bold">{s.daysPresent}</td>
+                                    <td className="p-2 text-center text-xs font-black text-red-600">{s.daysLate}</td>
+                                    <td className="p-2 text-center text-xs font-bold text-emerald-800">{formatMinutes(s.totalMinutes)}</td>
+                                </tr>
+                            );
+                        }) : (
+                            <tr><td colSpan={7} className="p-10 text-center text-slate-400 text-xs italic">لا يوجد طلاب لديهم ٣ تأخيرات أو أكثر في هذا الشهر</td></tr>
                         )}
                     </tbody>
                 </table>
             </div>
+            {highDelayStudents.length > 0 && (
+                <p className="mt-2 text-[8px] text-slate-400 font-bold italic">* تم عرض الطلاب الذين تكرر تأخرهم لثلاث مرات فأكثر فقط بناءً على معايير الانضباط.</p>
+            )}
         </div>
 
         {/* Section 3: Signature Area */}

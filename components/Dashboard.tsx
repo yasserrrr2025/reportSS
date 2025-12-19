@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { Stats, StudentRecord } from '../types';
+import { Stats, StudentRecord, StudentMetadata } from '../types';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   AreaChart, Area, PieChart, Pie, Cell, Legend 
@@ -10,9 +10,10 @@ import { formatMinutes } from '../utils/calculations';
 interface Props {
   stats: Stats;
   data: StudentRecord[];
+  students: StudentMetadata[];
 }
 
-const Dashboard: React.FC<Props> = ({ stats, data }) => {
+const Dashboard: React.FC<Props> = ({ stats, data, students }) => {
   // ألوان موحدة للنظام
   const COLORS = {
     emerald: '#10b981',
@@ -20,8 +21,14 @@ const Dashboard: React.FC<Props> = ({ stats, data }) => {
     rose: '#f43f5e',
     indigo: '#6366f1',
     slate: '#64748b',
-    sky: '#0ea5e9'
+    sky: '#0ea5e9',
+    violet: '#8b5cf6'
   };
+
+  // خريطة الطلاب للوصول السريع لبيانات الصف والفصل
+  const studentMap = useMemo(() => {
+    return new Map(students.map(s => [s.id, s]));
+  }, [students]);
 
   // بيانات الرسم البياني للتوجه (آخر 10 أيام)
   const trendData = useMemo(() => {
@@ -40,6 +47,55 @@ const Dashboard: React.FC<Props> = ({ stats, data }) => {
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([_, val]) => val)
       .slice(-10);
+  }, [data]);
+
+  // إحصائيات الفصول
+  const classStats = useMemo(() => {
+    const classMap: Record<string, { className: string; section: string; delayCount: number }> = {};
+    
+    data.forEach(r => {
+      if (r.delayMinutes > 0) {
+        const meta = studentMap.get(r.id);
+        const cName = meta?.className || "غير محدد";
+        const sNum = meta?.section || "—";
+        const key = `${cName}-${sNum}`;
+        
+        if (!classMap[key]) {
+          classMap[key] = { className: cName, section: sNum, delayCount: 0 };
+        }
+        classMap[key].delayCount += 1;
+      }
+    });
+
+    // مرتبة تنازلياً (الأكثر تأخراً أولاً)
+    return Object.values(classMap).sort((a, b) => b.delayCount - a.delayCount);
+  }, [data, studentMap]);
+
+  // تحليل أيام الأسبوع التراكمي
+  const weekdayStats = useMemo(() => {
+    const daysMap = [
+      { name: 'الأحد', count: 0 },
+      { name: 'الاثنين', count: 0 },
+      { name: 'الثلاثاء', count: 0 },
+      { name: 'الأربعاء', count: 0 },
+      { name: 'الخميس', count: 0 },
+      { name: 'الجمعة', count: 0 },
+      { name: 'السبت', count: 0 }
+    ];
+
+    data.forEach(r => {
+      if (r.delayMinutes > 0) {
+        const dayIndex = new Date(r.date).getDay();
+        daysMap[dayIndex].count += 1;
+      }
+    });
+
+    const activeDays = daysMap.filter(d => d.name !== 'الجمعة' && d.name !== 'السبت' || d.count > 0);
+    const counts = activeDays.map(d => d.count);
+    const maxVal = Math.max(...counts);
+    const minVal = counts.length > 0 ? Math.min(...counts) : 0;
+
+    return { data: activeDays, maxVal, minVal };
   }, [data]);
 
   // بيانات التوزيع (منضبط مقابل متأخر)
@@ -61,7 +117,7 @@ const Dashboard: React.FC<Props> = ({ stats, data }) => {
   }, [data]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8 animate-in fade-in duration-700 pb-12">
       {/* ترحيب وملخص */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-emerald-900 text-white p-8 rounded-[2rem] shadow-2xl relative overflow-hidden border border-emerald-800">
         <div className="relative z-10">
@@ -76,18 +132,17 @@ const Dashboard: React.FC<Props> = ({ stats, data }) => {
              </span>
           </div>
         </div>
-        <div className="relative z-10 flex items-center gap-4 bg-white/10 p-6 rounded-3xl border border-white/10 backdrop-blur-md">
-            <div className="text-left">
+        <div className="relative z-10 flex items-center gap-4 bg-white/10 p-6 rounded-3xl border border-white/10 backdrop-blur-md min-w-[280px]">
+            <div className="text-left w-full">
                 <p className="text-[10px] font-black uppercase tracking-widest text-emerald-300">أكثر يوم تسجيل تأخير</p>
-                <p className="text-xl font-black">{stats.busiestDay}</p>
+                <p className="text-xl font-black whitespace-normal break-words">{stats.busiestDay}</p>
             </div>
-            <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+            <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20 flex-shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
             </div>
         </div>
-        {/* Decorative Circles */}
         <div className="absolute -top-12 -right-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-emerald-400/10 rounded-full blur-2xl"></div>
       </div>
@@ -97,7 +152,7 @@ const Dashboard: React.FC<Props> = ({ stats, data }) => {
         {[
           { label: 'أطول مدة تأخير', value: formatMinutes(stats.maxDelayOverall), color: 'emerald', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
           { label: 'متوسط التأخير', value: `${extraStats.avgDelay} دقيقة`, color: 'amber', icon: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' },
-          { label: 'إجمالي الحالات', value: data.length, color: 'indigo', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
+          { label: 'إجمالي الحالات', value: data.length, color: 'indigo', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z' },
           { label: 'إجمالي الدقائق الضائعة', value: formatMinutes(extraStats.totalMinutes), color: 'rose', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
         ].map((card, idx) => (
           <div key={idx} className="group bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
@@ -156,11 +211,177 @@ const Dashboard: React.FC<Props> = ({ stats, data }) => {
           </div>
         </div>
 
-        {/* Distribution Pie */}
+        {/* Weekly Day Intensity Analysis */}
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col">
+          <div className="text-right mb-6 w-full">
+            <h4 className="font-black text-slate-800 text-lg">كثافة التأخير الأسبوعية</h4>
+            <p className="text-xs text-slate-400 font-bold">توزيع حالات التأخير التراكمي حسب أيام الأسبوع</p>
+          </div>
+          
+          <div className="flex-grow space-y-4">
+             {weekdayStats.data.map((day, idx) => {
+                const isMax = day.count === weekdayStats.maxVal && day.count > 0;
+                const isMin = day.count === weekdayStats.minVal && day.count > 0;
+                const percentage = weekdayStats.maxVal > 0 ? (day.count / weekdayStats.maxVal) * 100 : 0;
+                
+                return (
+                  <div key={idx} className="space-y-1">
+                    <div className="flex justify-between items-end">
+                      <span className={`text-xs font-black ${isMax ? 'text-rose-600' : isMin ? 'text-emerald-600' : 'text-slate-700'}`}>
+                        {day.name}
+                        {isMax && <span className="mr-2 text-[8px] bg-rose-50 px-1.5 py-0.5 rounded text-rose-500 uppercase tracking-tighter">الذروة</span>}
+                        {isMin && <span className="mr-2 text-[8px] bg-emerald-50 px-1.5 py-0.5 rounded text-emerald-500 uppercase tracking-tighter">الأفضل</span>}
+                      </span>
+                      <span className="text-[10px] font-black text-slate-400">{day.count} حالة</span>
+                    </div>
+                    <div className="h-3 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                      <div 
+                        className={`h-full transition-all duration-1000 ${isMax ? 'bg-rose-500' : isMin ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                        style={{ width: `${percentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                );
+             })}
+          </div>
+          <div className="mt-6 pt-4 border-t border-slate-50 flex gap-4 text-[9px] font-black uppercase tracking-widest text-slate-400">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 bg-rose-500 rounded-full"></span> الأعلى تأخيراً
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 bg-emerald-500 rounded-full"></span> الأقل تأخيراً
+                </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Class Statistics List - Enhanced with Gradients */}
+      <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h4 className="font-black text-slate-800 text-lg">تحليل التأخير حسب الفصول</h4>
+              <p className="text-xs text-slate-400 font-bold">الأكثر تأخيراً (أحمر) والأكثر انضباطاً (أخضر)</p>
+            </div>
+            <div className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-2xl border border-emerald-100 text-xs font-black">
+              {classStats.length} فصول نشطة
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {classStats.length > 0 ? classStats.map((c, i) => {
+                  const isTop3 = i < 3;
+                  const isBottom3 = i >= classStats.length - 3 && classStats.length > 3;
+
+                  // تحديد سمات البطاقة بناءً على الترتيب
+                  let cardStyles = "bg-slate-50 border-slate-100 text-slate-800";
+                  let iconStyles = "bg-indigo-50 text-indigo-600";
+                  let badge = null;
+
+                  if (isTop3) {
+                    cardStyles = "bg-gradient-to-br from-rose-500 to-red-600 border-rose-400 text-white shadow-lg shadow-rose-100";
+                    iconStyles = "bg-white/20 text-white";
+                    badge = <span className="absolute top-2 left-2 bg-white/20 text-[7px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-tighter">حالة حرجة</span>;
+                  } else if (isBottom3) {
+                    cardStyles = "bg-gradient-to-br from-emerald-500 to-teal-600 border-emerald-400 text-white shadow-lg shadow-emerald-100";
+                    iconStyles = "bg-white/20 text-white";
+                    badge = <span className="absolute top-2 left-2 bg-white/20 text-[7px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-tighter">انضباط عالي</span>;
+                  }
+
+                  return (
+                    <div key={i} className={`relative flex items-center justify-between p-5 rounded-[2rem] border transition-all duration-300 hover:scale-[1.03] group ${cardStyles}`}>
+                        {badge}
+                        <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs transition-colors ${iconStyles}`}>
+                                {c.section}
+                            </div>
+                            <div>
+                                <span className={`block text-xs font-black truncate max-w-[80px] ${isTop3 || isBottom3 ? 'text-white' : 'text-slate-800'}`}>{c.className}</span>
+                                <span className={`text-[10px] font-bold ${isTop3 || isBottom3 ? 'text-white/70' : 'text-slate-400'}`}>فصل دراسي</span>
+                            </div>
+                        </div>
+                        <div className="text-left">
+                            <span className={`text-xl font-black ${isTop3 || isBottom3 ? 'text-white' : 'text-rose-600'}`}>{c.delayCount}</span>
+                            <span className={`block text-[8px] font-black uppercase ${isTop3 || isBottom3 ? 'text-white/70' : 'text-slate-400'}`}>تأخير</span>
+                        </div>
+                    </div>
+                  );
+              }) : (
+                  <div className="col-span-full text-center py-10 text-slate-400 italic font-bold">لا توجد بيانات فصول متاحة حالياً. تأكد من رفع كشوف الطلاب.</div>
+              )}
+          </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+         {/* Top Students */}
+        <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between mb-8 border-b border-slate-50 pb-6">
+                <div>
+                    <h4 className="font-black text-slate-800 text-xl">قائمة التميز السلبي</h4>
+                    <p className="text-sm text-slate-400 font-bold">تحليل الحالات الأكثر تكراراً للتأخير</p>
+                </div>
+                <div className="bg-red-50 text-red-700 px-6 py-2.5 rounded-2xl border border-red-100 text-xs font-black animate-pulse">
+                    تحتاج تدخل إداري فوري
+                </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                {stats.topDelayedStudents.length > 0 ? (
+                    stats.topDelayedStudents.map((s, i) => {
+                        const meta = studentMap.get(s.id);
+                        return (
+                            <div key={i} className="flex justify-between items-center p-6 bg-slate-50 rounded-[3rem] border border-slate-100 hover:bg-white hover:shadow-2xl hover:-translate-y-1.5 transition-all group border-r-8 border-r-rose-600 relative overflow-hidden">
+                                <div className="flex items-center gap-5 flex-grow min-w-0 z-10">
+                                    <div className="bg-rose-100 text-rose-700 w-16 h-16 rounded-3xl flex flex-col items-center justify-center border border-rose-200 group-hover:bg-rose-600 group-hover:text-white transition-all flex-shrink-0 shadow-sm">
+                                        <span className="text-2xl font-black leading-none">{s.count}</span>
+                                        <span className="text-[9px] font-black uppercase">مرات</span>
+                                    </div>
+                                    <div className="flex-grow min-w-0">
+                                        <span className="font-black text-slate-900 block text-xl leading-snug mb-1.5 break-words group-hover:text-rose-700 transition-colors">
+                                            {s.name}
+                                        </span>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-lg text-[10px] font-black border border-emerald-100">
+                                                {meta?.className || "غير محدد"} - {meta?.section || "—"}
+                                            </span>
+                                            <div className="flex items-center gap-1">
+                                                <p className="text-[10px] text-slate-400 font-bold">إجمالي التأخير:</p>
+                                                <span className="text-rose-600 text-[10px] font-black">
+                                                    {formatMinutes(s.totalMinutes)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-end flex-shrink-0 ml-2 z-10">
+                                    <span className={`text-[9px] font-black px-3 py-1.5 rounded-2xl mb-3 shadow-sm ${s.count > 5 ? 'bg-red-600 text-white' : 'bg-amber-500 text-white'}`}>
+                                        {s.count > 5 ? 'حالة حرجة' : 'قيد المتابعة'}
+                                    </span>
+                                    <div className="flex -space-x-1.5 rtl:space-x-reverse opacity-40 group-hover:opacity-100 transition-opacity">
+                                        {[...Array(Math.min(s.count, 6))].map((_, i) => (
+                                            <div key={i} className="w-2 h-2 rounded-full bg-rose-500 border border-white shadow-sm"></div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-rose-500/5 rounded-full -mr-12 -mt-12 blur-2xl group-hover:bg-rose-500/10 transition-colors"></div>
+                            </div>
+                        );
+                    })
+                ) : (
+                    <div className="col-span-2 text-center py-16 bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 mx-auto text-slate-200 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-slate-400 font-black text-lg">سجل نظيف تماماً!</p>
+                        <p className="text-xs text-slate-300 font-bold">لا توجد حالات تأخير مكررة حالياً</p>
+                    </div>
+                )}
+            </div>
+        </div>
+
+        {/* Distribution Analysis */}
         <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col items-center">
-          <div className="text-center mb-6 w-full">
-            <h4 className="font-black text-slate-800 text-lg">نسبة الانضباط العامة</h4>
-            <p className="text-xs text-slate-400 font-bold">توزيع حالة الحضور لكافة السجلات</p>
+          <div className="text-center mb-4 w-full border-b border-slate-50 pb-4">
+            <h4 className="font-black text-slate-800 text-lg">توزيع حالة الانضباط</h4>
           </div>
           <div className="h-64 w-full relative">
             <ResponsiveContainer width="100%" height="100%">
@@ -169,116 +390,40 @@ const Dashboard: React.FC<Props> = ({ stats, data }) => {
                   data={distributionData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
+                  innerRadius={55}
+                  outerRadius={75}
                   paddingAngle={8}
                   dataKey="value"
+                  animationBegin={0}
+                  animationDuration={1500}
                 >
                   {distributionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                   ))}
                 </Pie>
-                <Tooltip />
-                <Legend iconType="circle" />
+                <Tooltip 
+                    contentStyle={{borderRadius: '1.5rem', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 'bold'}}
+                />
+                <Legend iconType="circle" verticalAlign="bottom" wrapperStyle={{ paddingTop: '20px', fontSize: '10px', fontWeight: 'bold' }} />
               </PieChart>
             </ResponsiveContainer>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mb-6">
-                <span className="text-3xl font-black text-slate-800">
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mb-10">
+                <span className="text-3xl font-black text-slate-800 leading-none">
                     {Math.round((distributionData[0].value / (data.length || 1)) * 100)}%
                 </span>
-                <span className="text-[10px] font-black text-emerald-600 uppercase">انضباط</span>
+                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">انضباط</span>
             </div>
           </div>
           <div className="mt-4 w-full space-y-3">
-             <div className="flex justify-between items-center p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                <span className="text-xs font-bold text-slate-500">مجموع الدقائق</span>
-                <span className="text-sm font-black text-slate-800">{formatMinutes(extraStats.totalMinutes)}</span>
-             </div>
-             <div className="flex justify-between items-center p-3 bg-slate-50 rounded-2xl border border-slate-100">
+             <div className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:shadow-lg transition-all">
                 <span className="text-xs font-bold text-slate-500">متوسط الوقت الضائع</span>
-                <span className="text-sm font-black text-slate-800">{extraStats.avgDelay} دقيقة/طالب</span>
+                <span className="text-md font-black text-slate-800 group-hover:text-rose-600 transition-colors">{extraStats.avgDelay} دقيقة</span>
+             </div>
+             <div className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:shadow-lg transition-all">
+                <span className="text-xs font-bold text-slate-500">معدل الانحراف</span>
+                <span className="text-md font-black text-emerald-600">مثالي</span>
              </div>
           </div>
-        </div>
-      </div>
-
-      {/* Top Delayed & Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
-         {/* Top Students */}
-        <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                    <h4 className="font-black text-slate-800 text-lg">قائمة التميز السلبي</h4>
-                    <p className="text-xs text-slate-400 font-bold">أكثر الطلاب تكراراً للتأخير في السجلات الحالية</p>
-                </div>
-                <div className="bg-red-50 text-red-700 px-4 py-2 rounded-2xl border border-red-100 text-xs font-black">
-                    تحتاج تدخل إداري
-                </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {stats.topDelayedStudents.length > 0 ? (
-                    stats.topDelayedStudents.map((s, i) => (
-                        <div key={i} className="flex justify-between items-center p-6 bg-slate-50 rounded-[2.5rem] border border-slate-100 hover:bg-white hover:shadow-xl transition-all group border-r-8 border-r-rose-600">
-                            <div className="flex items-center gap-5 flex-grow min-w-0">
-                                <div className="bg-rose-100 text-rose-700 w-14 h-14 rounded-2xl flex flex-col items-center justify-center border border-rose-200 group-hover:bg-rose-600 group-hover:text-white transition-all flex-shrink-0">
-                                    <span className="text-xl font-black leading-none">{s.count}</span>
-                                    <span className="text-[9px] font-black uppercase">مرات</span>
-                                </div>
-                                <div className="flex-grow min-w-0">
-                                    <span className="font-black text-slate-900 block text-lg leading-tight mb-1">{s.name}</span>
-                                    <p className="text-xs text-slate-500 font-bold">إجمالي التأخير: <span className="text-rose-600">{formatMinutes(s.totalMinutes)}</span></p>
-                                </div>
-                            </div>
-                            <div className="flex flex-col items-end flex-shrink-0">
-                                <span className={`text-[9px] font-black px-3 py-1 rounded-xl mb-2 ${s.count > 5 ? 'bg-red-600 text-white' : 'bg-amber-500 text-white'}`}>
-                                    {s.count > 5 ? 'حالة حرجة' : 'متابعة'}
-                                </span>
-                                <div className="flex -space-x-1.5 rtl:space-x-reverse opacity-40 group-hover:opacity-100 transition-opacity">
-                                    {[...Array(Math.min(s.count, 6))].map((_, i) => (
-                                        <div key={i} className="w-2 h-2 rounded-full bg-rose-500 border-2 border-white"></div>
-                                    ))}
-                                    {s.count > 6 && <span className="text-[8px] font-bold text-rose-500 pr-1">+{s.count-6}</span>}
-                                </div>
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    <div className="col-span-2 text-center py-16 bg-slate-50 rounded-[2rem] border border-dashed">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-slate-200 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <p className="text-slate-400 font-black">سجل نظيف! لا توجد حالات تأخير مكررة</p>
-                    </div>
-                )}
-            </div>
-        </div>
-
-        {/* Quick Insights */}
-        <div className="bg-indigo-600 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col">
-            <h4 className="text-white font-black text-xl mb-6 relative z-10">رؤى الذكاء الإداري</h4>
-            <div className="space-y-4 relative z-10 flex-grow">
-                {[
-                    { text: `أكثر يوم شهد انضباطاً هو ${trendData.sort((a, b) => b.onTime - a.onTime)[0]?.date || '...'}`, type: 'success' },
-                    { text: `${stats.topDelayedStudents.length} طلاب يمثلون ٤٠٪ من إجمالي دقائق التأخير.`, type: 'alert' },
-                    { text: `معدل التأخير في مدرسة حمزة بن عبدالمطلب ينخفض بنسبة ٢٪ أسبوعياً.`, type: 'info' }
-                ].map((insight, idx) => (
-                    <div key={idx} className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl flex gap-3 items-start">
-                        <div className="mt-1">
-                            <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
-                        </div>
-                        <p className="text-white text-xs font-bold leading-relaxed">{insight.text}</p>
-                    </div>
-                ))}
-            </div>
-            <div className="mt-8 relative z-10">
-                <button className="w-full bg-white text-indigo-700 font-black text-xs py-4 rounded-2xl shadow-xl hover:bg-indigo-50 transition-colors">
-                    توليد تقرير استباقي شامل
-                </button>
-            </div>
-            {/* Decorations */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16"></div>
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-400/20 rounded-full -ml-16 -mb-16"></div>
         </div>
       </div>
     </div>

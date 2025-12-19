@@ -1,20 +1,25 @@
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { GroupedData, StudentRecord } from '../types';
+import { GroupedData, StudentRecord, StudentMetadata } from '../types';
 import { LOGO_URL } from '../constants';
 import { formatMinutes, normalizeArabic } from '../utils/calculations';
 
 interface Props {
   groupedData: GroupedData;
+  students: StudentMetadata[];
   onBack: () => void;
 }
 
-const StudentReport: React.FC<Props> = ({ groupedData, onBack }) => {
+const StudentReport: React.FC<Props> = ({ groupedData, students, onBack }) => {
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [inputValue, setInputValue] = useState<string>("");
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const studentMap = useMemo(() => {
+    return new Map(students.map(s => [s.id, s]));
+  }, [students]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -79,6 +84,8 @@ const StudentReport: React.FC<Props> = ({ groupedData, onBack }) => {
     if (!selectedStudentId) return;
     window.print();
   };
+
+  const currentMeta = selectedStudentId ? studentMap.get(selectedStudentId) : null;
 
   return (
     <div className="space-y-4 print:space-y-0">
@@ -165,9 +172,15 @@ const StudentReport: React.FC<Props> = ({ groupedData, onBack }) => {
                         <span className="text-lg font-black text-white print:text-slate-900">{studentStats?.studentName}</span>
                     </div>
                 </div>
-                <div className="text-left bg-white/5 p-2 px-4 rounded-xl border border-white/10 print:bg-transparent print:border-none">
-                    <span className="block text-[8px] text-slate-400 font-black uppercase tracking-widest print:text-slate-500">السجل المدني</span>
-                    <span className="text-md font-black font-mono text-emerald-500 print:text-slate-900">{selectedStudentId}</span>
+                <div className="flex gap-4">
+                    <div className="text-center bg-white/5 p-2 px-4 rounded-xl border border-white/10 print:bg-transparent print:border-none">
+                        <span className="block text-[8px] text-slate-400 font-black uppercase tracking-widest print:text-slate-500">الصف / الفصل</span>
+                        <span className="text-sm font-black text-amber-500 print:text-slate-900">{currentMeta?.className || "—"} / {currentMeta?.section || "—"}</span>
+                    </div>
+                    <div className="text-left bg-white/5 p-2 px-4 rounded-xl border border-white/10 print:bg-transparent print:border-none">
+                        <span className="block text-[8px] text-slate-400 font-black uppercase tracking-widest print:text-slate-500">السجل المدني</span>
+                        <span className="text-md font-black font-mono text-emerald-500 print:text-slate-900">{selectedStudentId}</span>
+                    </div>
                 </div>
             </div>
 
@@ -221,7 +234,6 @@ const StudentReport: React.FC<Props> = ({ groupedData, onBack }) => {
                 </table>
             </div>
 
-            {/* الإشادة والتوصية الإدارية */}
             <div className="mt-4 p-5 border-2 border-emerald-100 rounded-2xl bg-emerald-50/30 text-[11px] leading-relaxed text-slate-800 print:page-break-inside-avoid">
                 <p className="font-black text-emerald-900 mb-3 border-b border-emerald-200 pb-2 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

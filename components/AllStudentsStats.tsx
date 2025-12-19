@@ -1,16 +1,21 @@
 
 import React, { useMemo, useState } from 'react';
-import { StudentRecord } from '../types';
+import { StudentRecord, StudentMetadata } from '../types';
 import { LOGO_URL } from '../constants';
 import { formatMinutes } from '../utils/calculations';
 
 interface Props {
   data: StudentRecord[];
+  students: StudentMetadata[];
   onBack: () => void;
 }
 
-const AllStudentsStats: React.FC<Props> = ({ data, onBack }) => {
+const AllStudentsStats: React.FC<Props> = ({ data, students, onBack }) => {
   const [search, setSearch] = useState("");
+
+  const studentMap = useMemo(() => {
+    return new Map(students.map(s => [s.id, s]));
+  }, [students]);
 
   const studentAggregates = useMemo(() => {
     const agg: Record<string, { id: string; name: string; totalDelays: number; totalMinutes: number; totalAttendance: number }> = {};
@@ -103,23 +108,30 @@ const AllStudentsStats: React.FC<Props> = ({ data, onBack }) => {
                 <th className="p-3 text-center text-[10px] font-black text-slate-600 uppercase border-r">م</th>
                 <th className="p-3 text-right text-[10px] font-black text-slate-600 uppercase border-r">اسم الطالب</th>
                 <th className="p-3 text-center text-[10px] font-black text-slate-600 uppercase border-r">رقم الهوية</th>
+                <th className="p-3 text-center text-[10px] font-black text-slate-600 uppercase border-r">الصف</th>
+                <th className="p-3 text-center text-[10px] font-black text-slate-600 uppercase border-r">الفصل</th>
                 <th className="p-3 text-center text-[10px] font-black text-slate-600 uppercase border-r">إجمالي الحضور</th>
                 <th className="p-3 text-center text-[10px] font-black text-slate-600 uppercase border-r">مرات التأخير</th>
                 <th className="p-3 text-center text-[10px] font-black text-slate-600 uppercase">مجموع دقائق التأخير</th>
               </tr>
             </thead>
             <tbody>
-              {studentAggregates.length > 0 ? studentAggregates.map((s, idx) => (
-                <tr key={s.id} className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${s.totalDelays >= 5 ? 'bg-red-50/20' : ''}`}>
-                  <td className="p-2 text-center text-xs font-bold text-slate-400 border-r">{idx + 1}</td>
-                  <td className="p-2 text-right text-xs font-black text-slate-800 border-r">{s.name}</td>
-                  <td className="p-2 text-center text-xs font-mono text-slate-500 border-r">{s.id}</td>
-                  <td className="p-2 text-center text-xs font-bold text-slate-600 border-r">{s.totalAttendance}</td>
-                  <td className="p-2 text-center text-xs font-black text-red-600 border-r">{s.totalDelays}</td>
-                  <td className="p-2 text-center text-xs font-bold text-emerald-800">{formatMinutes(s.totalMinutes)}</td>
-                </tr>
-              )) : (
-                <tr><td colSpan={6} className="p-10 text-center text-slate-400 text-xs italic">لا توجد بيانات متاحة</td></tr>
+              {studentAggregates.length > 0 ? studentAggregates.map((s, idx) => {
+                const meta = studentMap.get(s.id);
+                return (
+                  <tr key={s.id} className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${s.totalDelays >= 5 ? 'bg-red-50/20' : ''}`}>
+                    <td className="p-2 text-center text-xs font-bold text-slate-400 border-r">{idx + 1}</td>
+                    <td className="p-2 text-right text-xs font-black text-slate-800 border-r">{s.name}</td>
+                    <td className="p-2 text-center text-xs font-mono text-slate-500 border-r">{s.id}</td>
+                    <td className="p-2 text-center text-[10px] text-slate-500 border-r">{meta?.className || "—"}</td>
+                    <td className="p-2 text-center text-[10px] text-slate-500 border-r">{meta?.section || "—"}</td>
+                    <td className="p-2 text-center text-xs font-bold text-slate-600 border-r">{s.totalAttendance}</td>
+                    <td className="p-2 text-center text-xs font-black text-red-600 border-r">{s.totalDelays}</td>
+                    <td className="p-2 text-center text-xs font-bold text-emerald-800">{formatMinutes(s.totalMinutes)}</td>
+                  </tr>
+                );
+              }) : (
+                <tr><td colSpan={8} className="p-10 text-center text-slate-400 text-xs italic">لا توجد بيانات متاحة</td></tr>
               )}
             </tbody>
           </table>

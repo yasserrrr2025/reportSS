@@ -1,17 +1,22 @@
 
 import React, { useMemo, useState } from 'react';
-import { StudentRecord } from '../types';
+import { StudentRecord, StudentMetadata } from '../types';
 import { LOGO_URL } from '../constants';
 import { formatMinutes } from '../utils/calculations';
 
 interface Props {
   data: StudentRecord[];
+  students: StudentMetadata[];
   onBack: () => void;
 }
 
-const PrintReport: React.FC<Props> = ({ data, onBack }) => {
+const PrintReport: React.FC<Props> = ({ data, students, onBack }) => {
   const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
   
+  const studentMap = useMemo(() => {
+    return new Map(students.map(s => [s.id, s]));
+  }, [students]);
+
   const reportData = useMemo(() => {
     return data.filter(r => r.date === reportDate)
                .sort((a, b) => b.delayMinutes - a.delayMinutes);
@@ -32,7 +37,7 @@ const PrintReport: React.FC<Props> = ({ data, onBack }) => {
       {/* Configuration Bar - Hidden in Print */}
       <div className="no-print bg-emerald-50 p-4 rounded-xl border border-emerald-100 flex items-center justify-between">
         <div className="flex items-center gap-4">
-            <button onClick={onBack} className="text-emerald-700 hover:underline flex items-center gap-2">
+            <button onClick={onBack} className="text-emerald-700 hover:underline flex items-center gap-2 font-bold">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
@@ -44,13 +49,13 @@ const PrintReport: React.FC<Props> = ({ data, onBack }) => {
                     type="date" 
                     value={reportDate} 
                     onChange={(e) => setReportDate(e.target.value)}
-                    className="p-1 border rounded-md"
+                    className="p-1 border rounded-md font-bold"
                 />
             </div>
         </div>
         <button 
             onClick={handlePrint}
-            className="bg-emerald-600 text-white px-6 py-2 rounded-lg shadow-md hover:bg-emerald-700 transition"
+            className="bg-emerald-600 text-white px-6 py-2 rounded-lg shadow-md hover:bg-emerald-700 transition font-black"
         >
             بدء الطباعة الآن
         </button>
@@ -99,30 +104,37 @@ const PrintReport: React.FC<Props> = ({ data, onBack }) => {
               <th className="border border-slate-300 p-3 text-right">م</th>
               <th className="border border-slate-300 p-3 text-right">رقم الهوية</th>
               <th className="border border-slate-300 p-3 text-right">اسم الطالب</th>
+              <th className="border border-slate-300 p-3 text-center">الصف</th>
+              <th className="border border-slate-300 p-3 text-center">الفصل</th>
               <th className="border border-slate-300 p-3 text-center">وقت الحضور</th>
               <th className="border border-slate-300 p-3 text-center">مدة التأخير</th>
             </tr>
           </thead>
           <tbody>
             {reportData.length > 0 ? (
-              reportData.map((r, idx) => (
-                <tr key={idx} className={r.delayMinutes > 0 ? "bg-amber-50" : ""}>
-                  <td className="border border-slate-300 p-3 text-right">{idx + 1}</td>
-                  <td className="border border-slate-300 p-3 text-right font-mono">{r.id}</td>
-                  <td className="border border-slate-300 p-3 text-right font-bold">{r.name}</td>
-                  <td className="border border-slate-300 p-3 text-center font-mono">{r.arrivalTime}</td>
-                  <td className="border border-slate-300 p-3 text-center">
-                    {r.delayMinutes > 0 ? (
-                      <span className="font-bold text-red-600">{formatMinutes(r.delayMinutes)}</span>
-                    ) : (
-                      <span className="text-emerald-600 font-bold">حضور منضبط</span>
-                    )}
-                  </td>
-                </tr>
-              ))
+              reportData.map((r, idx) => {
+                const meta = studentMap.get(r.id);
+                return (
+                  <tr key={idx} className={r.delayMinutes > 0 ? "bg-amber-50" : ""}>
+                    <td className="border border-slate-300 p-3 text-right">{idx + 1}</td>
+                    <td className="border border-slate-300 p-3 text-right font-mono">{r.id}</td>
+                    <td className="border border-slate-300 p-3 text-right font-bold">{r.name}</td>
+                    <td className="border border-slate-300 p-3 text-center text-sm">{meta?.className || "—"}</td>
+                    <td className="border border-slate-300 p-3 text-center text-sm">{meta?.section || "—"}</td>
+                    <td className="border border-slate-300 p-3 text-center font-mono">{r.arrivalTime}</td>
+                    <td className="border border-slate-300 p-3 text-center">
+                      {r.delayMinutes > 0 ? (
+                        <span className="font-bold text-red-600">{formatMinutes(r.delayMinutes)}</span>
+                      ) : (
+                        <span className="text-emerald-600 font-bold">حضور منضبط</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
-                <td colSpan={5} className="border border-slate-300 p-10 text-center text-slate-400">لا يوجد بيانات مسجلة لهذا اليوم</td>
+                <td colSpan={7} className="border border-slate-300 p-10 text-center text-slate-400">لا يوجد بيانات مسجلة لهذا اليوم</td>
               </tr>
             )}
           </tbody>

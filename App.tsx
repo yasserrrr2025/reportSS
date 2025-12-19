@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ViewMode, StudentRecord, Stats, GroupedData } from './types';
-import { STORAGE_KEY, LOGO_URL } from './constants';
+import { ViewMode, StudentRecord, Stats, GroupedData, StudentMetadata } from './types';
+import { STORAGE_KEY, LOGO_URL, STUDENTS_METADATA_KEY } from './constants';
 import Dashboard from './components/Dashboard';
 import UploadSection from './components/UploadSection';
 import HistoryTable from './components/HistoryTable';
@@ -10,19 +10,21 @@ import MonthlyReport from './components/MonthlyReport';
 import StudentReport from './components/StudentReport';
 import ParentNotifications from './components/ParentNotifications';
 import AllStudentsStats from './components/AllStudentsStats';
+import StudentListUpload from './components/StudentListUpload';
+import StudentManagement from './components/StudentManagement';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewMode>(ViewMode.Dashboard);
   const [data, setData] = useState<GroupedData>({});
+  const [studentsMetadata, setStudentsMetadata] = useState<StudentMetadata[]>([]);
 
-  // استرجاع البيانات عند التشغيل وتحويلها للهيكل الجديد إذا كانت مخزنة كمصفوفة قديمة
+  // استرجاع البيانات عند التشغيل
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
       try {
-        const parsed = JSON.parse(saved);
+        const parsed = JSON.parse(savedData);
         if (Array.isArray(parsed)) {
-          // تحويل من مصفوفة إلى هيكل مجمع (Migration)
           const grouped: GroupedData = {};
           parsed.forEach((r: StudentRecord) => {
             if (!grouped[r.id]) grouped[r.id] = {};
@@ -33,7 +35,16 @@ const App: React.FC = () => {
           setData(parsed);
         }
       } catch (e) {
-        console.error("Failed to parse stored data", e);
+        console.error("Failed to parse stored attendance data", e);
+      }
+    }
+
+    const savedMetadata = localStorage.getItem(STUDENTS_METADATA_KEY);
+    if (savedMetadata) {
+      try {
+        setStudentsMetadata(JSON.parse(savedMetadata));
+      } catch (e) {
+        console.error("Failed to parse stored student metadata", e);
       }
     }
   }, []);
@@ -43,13 +54,16 @@ const App: React.FC = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }, [data]);
 
-  // Derived State: مصفوفة مسطحة للمكونات التي تحتاجها
+  useEffect(() => {
+    localStorage.setItem(STUDENTS_METADATA_KEY, JSON.stringify(studentsMetadata));
+  }, [studentsMetadata]);
+
   const flatData = useMemo(() => {
     return Object.values(data).flatMap(studentRecords => Object.values(studentRecords));
   }, [data]);
 
   const stats: Stats = useMemo(() => {
-    const studentStats: { name: string; count: number; totalMinutes: number }[] = [];
+    const studentStats: { id: string; name: string; count: number; totalMinutes: number }[] = [];
     let maxOverall = 0;
     const dayMap: Record<string, number> = {};
 
@@ -69,7 +83,7 @@ const App: React.FC = () => {
       });
 
       if (count > 0) {
-        studentStats.push({ name, count, totalMinutes });
+        studentStats.push({ id, name, count, totalMinutes });
       }
     });
 
@@ -77,13 +91,20 @@ const App: React.FC = () => {
       .sort((a, b) => b.totalMinutes - a.totalMinutes)
       .slice(0, 5);
 
-    const busiestDay = Object.entries(dayMap)
-      .sort((a, b) => b[1] - a[1])[0]?.[0] || "لا يوجد بيانات";
+    const busiestDayEntry = Object.entries(dayMap)
+      .sort((a, b) => b[1] - a[1])[0];
+    
+    let busiestDayStr = "لا يوجد بيانات";
+    if (busiestDayEntry) {
+      const dateObj = new Date(busiestDayEntry[0]);
+      const dayName = new Intl.DateTimeFormat('ar-SA', { weekday: 'long' }).format(dateObj);
+      busiestDayStr = `${dayName} (${busiestDayEntry[0]})`;
+    }
 
     return {
       topDelayedStudents: topDelayed,
       maxDelayOverall: maxOverall,
-      busiestDay
+      busiestDay: busiestDayStr
     };
   }, [data]);
 
@@ -92,13 +113,33 @@ const App: React.FC = () => {
       const updated = { ...prev };
       newRecords.forEach(nr => {
         if (!updated[nr.id]) updated[nr.id] = {};
-        // دمج البيانات مع الحفاظ على حالة الإشعار إذا كان السجل موجوداً مسبقاً
         const existing = updated[nr.id][nr.date];
         updated[nr.id][nr.date] = { ...nr, notified: existing?.notified ?? false };
       });
       return updated;
     });
     setView(ViewMode.History);
+  };
+
+  const handleUpdateStudentList = (students: StudentMetadata[]) => {
+    setStudentsMetadata(prev => {
+        const map = new Map(prev.map(s => [s.id, s]));
+        students.forEach(s => map.set(s.id, s));
+        return Array.from(map.values());
+    });
+    setView(ViewMode.StudentManagement);
+  };
+
+  const deleteStudentFromMetadata = (id: string) => {
+    if (window.confirm("هل أنت متأكد من حذف هذا الطالب من قاعدة البيانات؟")) {
+        setStudentsMetadata(prev => prev.filter(s => s.id !== id));
+    }
+  };
+
+  const clearStudentDatabase = () => {
+    if (window.confirm("سيتم حذف كافة بيانات الطلاب المخزنة. هل أنت متأكد؟")) {
+        setStudentsMetadata([]);
+    }
   };
 
   const markAsNotified = (studentId: string, dates: string[]) => {
@@ -140,7 +181,8 @@ const App: React.FC = () => {
           </div>
           <nav className="flex flex-wrap justify-center gap-2">
             <button onClick={() => setView(ViewMode.Dashboard)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.Dashboard ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>لوحة التحكم</button>
-            <button onClick={() => setView(ViewMode.Upload)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.Upload ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>رفع ملف</button>
+            <button onClick={() => setView(ViewMode.StudentManagement)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.StudentManagement || view === ViewMode.StudentDatabase ? 'bg-amber-600 text-white' : 'text-amber-600 hover:bg-amber-50 border border-amber-100'}`}>قاعدة الطلاب</button>
+            <button onClick={() => setView(ViewMode.Upload)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.Upload ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>رفع حضور يومي</button>
             <button onClick={() => setView(ViewMode.History)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.History ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>السجل</button>
             <button onClick={() => setView(ViewMode.AllStudentsStats)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.AllStudentsStats ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>إحصائيات الطلاب</button>
             <button onClick={() => setView(ViewMode.MonthlyReport)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.MonthlyReport ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>التقرير الشهري</button>
@@ -151,14 +193,16 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-        {view === ViewMode.Dashboard && <Dashboard stats={stats} data={flatData} />}
+        {view === ViewMode.Dashboard && <Dashboard stats={stats} data={flatData} students={studentsMetadata} />}
+        {view === ViewMode.StudentDatabase && <StudentListUpload onUpdate={handleUpdateStudentList} onBack={() => setView(ViewMode.StudentManagement)} />}
+        {view === ViewMode.StudentManagement && <StudentManagement students={studentsMetadata} onDelete={deleteStudentFromMetadata} onClear={clearStudentDatabase} onUpload={() => setView(ViewMode.StudentDatabase)} />}
         {view === ViewMode.Upload && <UploadSection onUpload={handleUpload} />}
-        {view === ViewMode.History && <HistoryTable data={flatData} onDelete={deleteRecord} onPrint={() => setView(ViewMode.PrintReport)} />}
-        {view === ViewMode.PrintReport && <PrintReport data={flatData} onBack={() => setView(ViewMode.History)} />}
-        {view === ViewMode.MonthlyReport && <MonthlyReport data={flatData} onBack={() => setView(ViewMode.Dashboard)} />}
-        {view === ViewMode.StudentReport && <StudentReport groupedData={data} onBack={() => setView(ViewMode.Dashboard)} />}
+        {view === ViewMode.History && <HistoryTable data={flatData} students={studentsMetadata} onDelete={deleteRecord} onPrint={() => setView(ViewMode.PrintReport)} />}
+        {view === ViewMode.PrintReport && <PrintReport data={flatData} students={studentsMetadata} onBack={() => setView(ViewMode.History)} />}
+        {view === ViewMode.MonthlyReport && <MonthlyReport data={flatData} students={studentsMetadata} onBack={() => setView(ViewMode.Dashboard)} />}
+        {view === ViewMode.StudentReport && <StudentReport groupedData={data} students={studentsMetadata} onBack={() => setView(ViewMode.Dashboard)} />}
         {view === ViewMode.ParentNotifications && <ParentNotifications data={flatData} onMarkNotified={markAsNotified} onBack={() => setView(ViewMode.Dashboard)} />}
-        {view === ViewMode.AllStudentsStats && <AllStudentsStats data={flatData} onBack={() => setView(ViewMode.Dashboard)} />}
+        {view === ViewMode.AllStudentsStats && <AllStudentsStats data={flatData} students={studentsMetadata} onBack={() => setView(ViewMode.Dashboard)} />}
       </main>
 
       <footer className="bg-white border-t py-4 no-print text-center text-slate-400 text-sm">
