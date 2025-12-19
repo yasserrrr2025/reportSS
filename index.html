@@ -10,9 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;400;600;700;900&display=swap" rel="stylesheet">
-    <!-- PDF.js library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <!-- SheetJS for Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         body {
@@ -20,11 +18,10 @@
             background-color: #f8fafc;
         }
 
-        /* تحسينات الطباعة الشاملة */
         @media print {
             @page {
                 size: A4 portrait;
-                margin: 1cm;
+                margin: 0.8cm;
             }
 
             body {
@@ -32,83 +29,33 @@
                 color: black !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
-                font-size: 12pt;
+                font-size: 8pt; /* الحجم الافتراضي للطباعة كما طلب المستخدم */
             }
 
-            /* إخفاء العناصر غير الضرورية */
-            .no-print, 
-            header, 
-            footer, 
-            nav, 
-            button, 
-            input[type="file"],
-            .config-bar { 
-                display: none !important; 
-            }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
 
-            .print-only { 
-                display: block !important; 
-            }
-
-            /* تصفير الحواف والظلال */
-            .shadow-2xl, .shadow-xl, .shadow-lg, .shadow-md, .shadow-sm, .shadow {
-                box-shadow: none !important;
-                border: 1px solid #eee !important;
-            }
-
-            .rounded-[2.5rem], .rounded-3xl, .rounded-2xl {
-                border-radius: 0.5rem !important;
-            }
-
-            /* تحسين الجداول للطباعة */
             table {
                 width: 100% !important;
                 border-collapse: collapse !important;
-                page-break-inside: auto;
-            }
-
-            tr {
-                page-break-inside: avoid;
-                page-break-after: auto;
+                border: 1px solid black !important;
             }
 
             th, td {
-                border: 1px solid #ddd !important;
-                padding: 6pt !important;
+                border: 1px solid black !important;
+                padding: 4pt !important;
                 color: black !important;
+                font-size: 8pt;
             }
 
-            thead {
-                display: table-header-group;
+            .shadow-2xl, .shadow-xl, .shadow-lg, .shadow-md, .shadow-sm, .shadow {
+                box-shadow: none !important;
             }
 
-            /* منع تقطيع الأقسام المهمة */
-            .stats-grid, 
-            .signature-section, 
-            .report-header,
-            .summary-box {
-                page-break-inside: avoid !important;
-            }
-
-            /* التأكد من عرض النصوص بوضوح */
-            .text-slate-400, .text-slate-500 {
-                color: #666 !important;
+            .rounded-[2.5rem], .rounded-3xl, .rounded-2xl {
+                border-radius: 0 !important;
             }
             
-            .text-emerald-800, .text-emerald-900, .text-slate-900 {
-                color: black !important;
-            }
-
-            /* تحسين استغلال المساحة */
-            .max-w-[21cm] {
-                max-width: 100% !important;
-                width: 100% !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                border: none !important;
-            }
-
-            /* فواصل الصفحات للإشعارات المتعددة */
             .page-break {
                 page-break-before: always;
             }
