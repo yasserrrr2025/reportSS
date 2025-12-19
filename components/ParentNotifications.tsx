@@ -72,7 +72,7 @@ const ParentNotifications: React.FC<Props> = ({ data, students, onMarkNotified, 
 
   return (
     <div className="space-y-6">
-      {/* واجهة التحكم العادية (غير مطبوعة) */}
+      {/* UI Control Bar */}
       <div className="no-print bg-white p-6 rounded-2xl border shadow-sm flex flex-wrap items-center justify-between gap-6">
         <div>
           <button onClick={onBack} className="text-slate-400 hover:text-emerald-700 flex items-center gap-2 font-bold mb-2 transition-colors">
@@ -82,14 +82,12 @@ const ParentNotifications: React.FC<Props> = ({ data, students, onMarkNotified, 
             العودة للوحة التحكم
           </button>
           <h2 className="text-xl font-black text-slate-800">توليد إشعارات أولياء الأمور</h2>
-          <p className="text-xs text-slate-500 font-bold">نموذج احترافي يحاكي الخطابات الرسمية لوزارة التعليم</p>
         </div>
-
         <div className="flex gap-3">
           <button 
             onClick={handlePrint}
             disabled={selectedIds.length === 0}
-            className={`px-6 py-2 rounded-xl shadow-md transition flex items-center gap-2 font-bold ${selectedIds.length === 0 ? 'bg-slate-200 text-slate-400' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+            className={`px-6 py-2 rounded-xl shadow-md transition font-bold ${selectedIds.length === 0 ? 'bg-slate-200 text-slate-400' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
           >
             طباعة الإشعارات ({selectedIds.length})
           </button>
@@ -98,11 +96,12 @@ const ParentNotifications: React.FC<Props> = ({ data, students, onMarkNotified, 
             disabled={selectedIds.length === 0}
             className={`px-6 py-2 rounded-xl border-2 transition font-bold ${selectedIds.length === 0 ? 'border-slate-100 text-slate-300' : 'border-red-600 text-red-600 hover:bg-red-50'}`}
           >
-            اعتماد وإغلاق الحالات
+            اعتماد الحالات
           </button>
         </div>
       </div>
 
+      {/* List for selection */}
       <div className="no-print bg-white rounded-2xl border shadow-sm overflow-hidden">
         <table className="w-full text-right">
           <thead className="bg-slate-50 border-b">
@@ -124,9 +123,7 @@ const ParentNotifications: React.FC<Props> = ({ data, students, onMarkNotified, 
                     <input type="checkbox" checked={selectedIds.includes(c.id)} onChange={() => handleSelect(c.id)} className="w-4 h-4 rounded text-emerald-600 cursor-pointer" />
                   </td>
                   <td className="p-4 font-bold text-slate-800">{c.name}</td>
-                  <td className="p-4 text-center">
-                    <span className="px-3 py-1 rounded-full text-xs font-black bg-red-100 text-red-700">{c.records.length}</span>
-                  </td>
+                  <td className="p-4 text-center font-black text-red-600">{c.records.length}</td>
                   <td className="p-4 text-slate-500 text-sm">{meta?.className || "—"} / {meta?.section || "—"}</td>
                 </tr>
               );
@@ -135,22 +132,24 @@ const ParentNotifications: React.FC<Props> = ({ data, students, onMarkNotified, 
         </table>
       </div>
 
-      {/* قالب الطباعة الاحترافي */}
+      {/* Professional Printing Template */}
       <div className="hidden print:block">
         {candidates.filter(c => selectedIds.includes(c.id)).map((student, sIdx) => {
           const meta = studentMap.get(student.id);
-          // تقسيم السجلات إلى مجموعات من 6
-          const rightTableRecords = student.records.slice(0, 6);
-          const leftTableRecords = student.records.length > 6 ? student.records.slice(6, 12) : [];
           
+          // تقسيم ذكي للسجلات: 6 سجلات لكل جدول متجاور
+          const tableChunks = [];
+          for (let i = 0; i < student.records.length; i += 6) {
+            tableChunks.push(student.records.slice(i, i + 6));
+          }
+
           return (
-            <div key={student.id} className={`bg-white min-h-[29cm] relative p-4 ${sIdx > 0 ? 'page-break' : ''}`} style={{ direction: 'rtl' }}>
-              {/* الترويسة العلوية */}
+            <div key={student.id} className={`bg-white min-h-[29.7cm] p-0 mb-4 ${sIdx > 0 ? 'page-break-before-always' : ''}`} style={{ pageBreakBefore: sIdx > 0 ? 'always' : 'auto' }}>
+              {/* Header */}
               <div className="flex justify-between items-start mb-2" style={{ fontSize: '8pt' }}>
                  <div className="font-bold space-y-0.5">
                    <p>المملكة العربية السعودية</p>
                    <p>وزارة التعليم</p>
-                   <p>إدارة التعليم بمنطقة ...........</p>
                    <p>مدرسة حمزة بن عبدالمطلب</p>
                  </div>
                  <div className="text-center">
@@ -158,140 +157,101 @@ const ParentNotifications: React.FC<Props> = ({ data, students, onMarkNotified, 
                  </div>
                  <div className="font-bold space-y-0.5 text-left">
                     <p>التاريخ: {new Date().toLocaleDateString('ar-SA')}</p>
-                    <p>رقم الإشعار: {student.id.slice(-4)}</p>
+                    <p>رقم الإشعار: {student.id.slice(-4)}-{new Date().getMonth()+1}</p>
                  </div>
               </div>
 
-              {/* العنوان والخط الفاصل */}
-              <div className="text-center mt-4">
-                  <div className="w-full border-t-2 border-black mb-2"></div>
-                  <h1 className="text-lg font-black" style={{ fontSize: '14pt' }}>إشعار ولي أمر طالب متأخر</h1>
-                  <div className="w-full border-t-2 border-black mt-2"></div>
+              {/* Title Area */}
+              <div className="text-center mb-6">
+                  <div className="w-full border-t border-black mb-1"></div>
+                  <h1 className="font-black" style={{ fontSize: '13pt' }}>إشعار ولي أمر طالب متأخر</h1>
+                  <div className="w-full border-t border-black mt-1"></div>
               </div>
 
-              {/* متن الخطاب */}
-              <div className="mt-8 space-y-4" style={{ fontSize: '8pt' }}>
+              {/* Body Text */}
+              <div className="space-y-4" style={{ fontSize: '8pt' }}>
                   <div className="flex justify-between items-center">
-                    <p className="font-bold" style={{ fontSize: '11pt' }}>
-                        المكرم ولي أمر الطالب : <span className="font-black border-b-2 border-black px-4">{student.name}</span> المحترم
+                    <p className="font-bold">
+                        المكرم ولي أمر الطالب : <span className="font-black border-b border-black px-4" style={{ fontSize: '12pt' }}>{student.name}</span> المحترم
                     </p>
-                    <p className="font-black" style={{ fontSize: '11pt' }}>حفظه الله</p>
+                    <p className="font-black">حفظه الله</p>
                   </div>
                   
-                  <div className="font-bold">
-                    <p>الصف الدراسي: <span className="border-b border-black px-2">{meta?.className || "—"}</span> &nbsp;&nbsp; الفصل: <span className="border-b border-black px-2">{meta?.section || "—"}</span></p>
+                  <div className="font-bold flex gap-8">
+                    <p>الصف الدراسي: <span className="border-b border-black px-4">{meta?.className || "—"}</span></p>
+                    <p>الفصل: <span className="border-b border-black px-4">{meta?.section || "—"}</span></p>
                   </div>
 
-                  <p className="font-bold mt-4">السلام عليكم ورحمة الله وبركاته وبعد ،،</p>
-                  <p className="leading-loose font-bold">نود إفادتكم بأن ابنكم المذكور أعلاه قد تكرر تأخره عن الحضور للمدرسة (الطابور الصباحي) في الأيام الموضحة أدناه، ونظراً لأهمية الحضور المبكر لما له من أثر إيجابي على التحصيل العلمي، نأمل منكم التكرم بمتابعة أسباب هذا التأخير:</p>
+                  <p className="font-bold mt-2 leading-relaxed">السلام عليكم ورحمة الله وبركاته وبعد ،،</p>
+                  <p className="leading-normal font-bold">نود إفادتكم بأن ابنكم المذكور أعلاه قد تكرر تأخره عن الحضور للمدرسة (الطابور الصباحي) في الأيام الموضحة أدناه، ونظراً لأهمية الحضور المبكر لما له من أثر إيجابي على التحصيل العلمي، نأمل منكم التكرم بمتابعة أسباب هذا التأخير:</p>
               </div>
 
-              {/* الجداول الديناميكية المتجاورة */}
-              <div className="mt-6 flex gap-4">
-                  {/* الجدول اليمين (الأول) */}
-                  <div className="flex-1">
-                      <table className="w-full text-center border-2 border-black">
-                          <thead className="bg-gray-100">
-                              <tr className="border-b-2 border-black">
-                                  <th className="p-1 border-l-2 border-black w-8">م</th>
-                                  <th className="p-1 border-l-2 border-black">تاريخ التأخر</th>
-                                  <th className="p-1 border-l-2 border-black">وقت الوصول</th>
-                                  <th className="p-1">المدة</th>
-                              </tr>
-                          </thead>
-                          <tbody>
-                              {rightTableRecords.map((r, i) => (
-                                  <tr key={i} className="border-b border-black">
-                                      <td className="p-1 border-l-2 border-black font-bold">{i + 1}</td>
-                                      <td className="p-1 border-l-2 border-black font-mono">{r.date}</td>
-                                      <td className="p-1 border-l-2 border-black font-mono">{r.arrivalTime}</td>
-                                      <td className="p-1 font-bold">{r.delayMinutes}د</td>
-                                  </tr>
-                              ))}
-                              {/* تكملة الصفوف الفارغة لضمان ثبات الشكل */}
-                              {Array.from({ length: 6 - rightTableRecords.length }).map((_, i) => (
-                                  <tr key={`empty-r-${i}`} className="border-b border-black h-6">
-                                      <td className="border-l-2 border-black">&nbsp;</td>
-                                      <td className="border-l-2 border-black"></td>
-                                      <td className="border-l-2 border-black"></td>
-                                      <td></td>
-                                  </tr>
-                              ))}
-                          </tbody>
+              {/* Dynamic Side-by-Side Tables */}
+              <div className="mt-4 flex gap-4 items-start">
+                  {tableChunks.slice(0, 2).map((chunk, chunkIdx) => (
+                    <div key={chunkIdx} className="flex-1">
+                      <table className="w-full text-center border-2 border-black" style={{ fontSize: '8pt' }}>
+                        <thead className="bg-gray-100">
+                          <tr className="border-b border-black font-black">
+                            <th className="p-1 border-l border-black w-8">م</th>
+                            <th className="p-1 border-l border-black">التاريخ</th>
+                            <th className="p-1 border-l border-black">وقت الحضور</th>
+                            <th className="p-1">مدة التأخير</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {chunk.map((r, rIdx) => (
+                            <tr key={rIdx} className="border-b border-black last:border-0">
+                              <td className="p-1 border-l border-black">{(chunkIdx * 6) + rIdx + 1}</td>
+                              <td className="p-1 border-l border-black font-mono">{r.date}</td>
+                              <td className="p-1 border-l border-black font-mono">{r.arrivalTime}</td>
+                              <td className="p-1 font-bold">{r.delayMinutes} د</td>
+                            </tr>
+                          ))}
+                        </tbody>
                       </table>
-                  </div>
-
-                  {/* الجدول اليسار (الثاني - يظهر فقط إذا زاد العدد عن 6) */}
-                  <div className="flex-1">
-                      <table className="w-full text-center border-2 border-black">
-                          <thead className="bg-gray-100">
-                              <tr className="border-b-2 border-black">
-                                  <th className="p-1 border-l-2 border-black w-8">م</th>
-                                  <th className="p-1 border-l-2 border-black">تاريخ التأخر</th>
-                                  <th className="p-1 border-l-2 border-black">وقت الوصول</th>
-                                  <th className="p-1">المدة</th>
-                              </tr>
-                          </thead>
-                          <tbody>
-                              {leftTableRecords.map((r, i) => (
-                                  <tr key={i} className="border-b border-black">
-                                      <td className="p-1 border-l-2 border-black font-bold">{i + 7}</td>
-                                      <td className="p-1 border-l-2 border-black font-mono">{r.date}</td>
-                                      <td className="p-1 border-l-2 border-black font-mono">{r.arrivalTime}</td>
-                                      <td className="p-1 font-bold">{r.delayMinutes}د</td>
-                                  </tr>
-                              ))}
-                              {/* تكملة الصفوف الفارغة */}
-                              {Array.from({ length: 6 - leftTableRecords.length }).map((_, i) => (
-                                  <tr key={`empty-l-${i}`} className="border-b border-black h-6">
-                                      <td className="border-l-2 border-black">&nbsp;</td>
-                                      <td className="border-l-2 border-black"></td>
-                                      <td className="border-l-2 border-black"></td>
-                                      <td></td>
-                                  </tr>
-                              ))}
-                          </tbody>
-                      </table>
-                  </div>
+                    </div>
+                  ))}
               </div>
 
-              {/* تنبيه لائحة السلوك */}
-              <div className="mt-4 p-2 bg-gray-50 border border-black text-center font-bold" style={{ fontSize: '7.5pt' }}>
+              {/* Reminder Box */}
+              <div className="mt-4 p-2 border border-black text-center font-bold bg-gray-50" style={{ fontSize: '7.5pt' }}>
                   نحيطكم علماً بأن تكرار التأخر يؤدي إلى حسم درجات من بند (المواظبة) وفق لائحة السلوك والمواظبة، ونهيب بكم الحرص على تواجد الطالب بالمدرسة بحد أقصى الساعة 7:15 صباحاً.
               </div>
 
-              {/* قسم إفادة ولي الأمر */}
-              <div className="mt-8 border-2 border-black p-3 relative" style={{ fontSize: '8pt' }}>
+              {/* Feedback Section */}
+              <div className="mt-6 border border-black p-3 relative" style={{ fontSize: '8pt' }}>
                   <p className="absolute -top-3 right-4 bg-white px-2 font-black">إفادة ولي الأمر</p>
-                  <div className="space-y-4 pt-2">
-                      <p className="font-bold">أسباب التأخير المتكرر:</p>
-                      <div className="border-b border-dotted border-gray-400 h-6 w-full"></div>
-                      <div className="border-b border-dotted border-gray-400 h-6 w-full"></div>
-                      <div className="flex justify-between items-end mt-8">
-                          <div className="space-y-2">
+                  <div className="space-y-3 pt-1">
+                      <p className="font-bold underline">أسباب التأخير المتكرر:</p>
+                      <div className="border-b border-dotted border-gray-400 h-6"></div>
+                      <div className="border-b border-dotted border-gray-400 h-6"></div>
+                      <div className="flex justify-between items-end mt-6 font-bold">
+                          <div className="space-y-4">
                              <p>الاسم: ...........................................................</p>
                              <p>التوقيع: .........................................................</p>
                           </div>
-                          <div className="text-left">
+                          <div className="text-left space-y-4">
                              <p>رقم الجوال: ...................................................</p>
+                             <p>&nbsp;</p>
                           </div>
                       </div>
                   </div>
               </div>
 
-              {/* التوقيعات الرسمية */}
-              <div className="mt-auto pt-16 grid grid-cols-3 gap-8 text-center font-black" style={{ fontSize: '9pt' }}>
+              {/* Official Signatures */}
+              <div className="mt-auto pt-10 grid grid-cols-3 gap-8 text-center font-black" style={{ fontSize: '9pt' }}>
                   <div>
-                      <p className="border-b border-black pb-1 mb-16 inline-block w-40">الموجه الطلابي</p>
+                      <p className="border-b border-black pb-1 mb-12 inline-block w-40">الموجه الطلابي</p>
                       <p>.......................................</p>
                   </div>
-                  <div className="flex flex-col items-center justify-center opacity-30 select-none">
-                      <div className="w-24 h-24 border-4 border-double border-gray-400 rounded-full flex items-center justify-center rotate-12">
-                         <span className="text-[7pt]">ختم المدرسة</span>
+                  <div className="flex flex-col items-center justify-center opacity-40 select-none grayscale">
+                      <div className="w-24 h-24 border-2 border-double border-gray-900 rounded-full flex items-center justify-center rotate-12">
+                         <span className="text-[7pt] font-black">ختم المدرسة</span>
                       </div>
                   </div>
                   <div>
-                      <p className="border-b border-black pb-1 mb-16 inline-block w-40">مدير المدرسة</p>
+                      <p className="border-b border-black pb-1 mb-12 inline-block w-40">مدير المدرسة</p>
                       <p>.......................................</p>
                   </div>
               </div>

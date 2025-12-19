@@ -82,7 +82,7 @@ const StudentReport: React.FC<Props> = ({ groupedData, students, onBack }) => {
 
   return (
     <div className="space-y-4 print:space-y-0">
-      {/* واجهة اختيار الطالب (مخفية في الطباعة) */}
+      {/* Control Bar */}
       <div className="no-print bg-white p-6 rounded-2xl border shadow-sm flex flex-wrap items-center justify-between gap-6 relative z-50">
         <div className="flex items-center gap-4 flex-grow max-w-2xl">
             <button onClick={onBack} className="p-2 text-slate-400 hover:text-emerald-700 transition">
@@ -93,20 +93,16 @@ const StudentReport: React.FC<Props> = ({ groupedData, students, onBack }) => {
             <div className="relative flex-grow" ref={dropdownRef}>
                 <input 
                     type="text"
-                    placeholder="ابحث باسم الطالب أو السجل..."
+                    placeholder="ابحث باسم الطالب..."
                     value={inputValue}
                     onFocus={() => setIsDropdownOpen(true)}
                     onChange={(e) => { setInputValue(e.target.value); setIsDropdownOpen(true); }}
-                    className="w-full px-4 py-2 border-2 rounded-xl focus:border-emerald-500 outline-none font-bold"
+                    className="w-full px-4 py-2 border-2 rounded-xl font-bold"
                 />
-                {isDropdownOpen && filteredStudents.length > 0 && (
+                {isDropdownOpen && (
                     <div className="absolute top-full mt-2 w-full bg-white border rounded-xl shadow-xl max-h-60 overflow-y-auto z-50">
                         {filteredStudents.map(s => (
-                            <button
-                                key={s.id}
-                                onClick={() => handleSelectStudent(s.id, s.name)}
-                                className="w-full text-right px-4 py-2 hover:bg-emerald-50 border-b last:border-0"
-                            >
+                            <button key={s.id} onClick={() => handleSelectStudent(s.id, s.name)} className="w-full text-right px-4 py-2 hover:bg-emerald-50 border-b last:border-0">
                                 <p className="font-bold text-slate-800">{s.name}</p>
                                 <p className="text-[10px] text-slate-400">{s.id}</p>
                             </button>
@@ -115,19 +111,15 @@ const StudentReport: React.FC<Props> = ({ groupedData, students, onBack }) => {
                 )}
             </div>
         </div>
-        <button 
-            onClick={handlePrint}
-            disabled={!selectedStudentId}
-            className={`px-8 py-2 rounded-xl shadow transition font-black ${!selectedStudentId ? 'bg-slate-100 text-slate-300' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
-        >
-            طباعة التقرير
+        <button onClick={handlePrint} disabled={!selectedStudentId} className={`px-8 py-2 rounded-xl shadow transition font-black ${!selectedStudentId ? 'bg-slate-100 text-slate-300' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
+            طباعة التقرير الشامل
         </button>
       </div>
 
       {selectedStudentId && (
-        <div className="bg-white p-8 print:p-2 shadow rounded-2xl print:rounded-none max-w-[21cm] mx-auto border print:border-none min-h-[28cm] flex flex-col">
-            {/* الترويسة الرسمية للتقرير */}
-            <div className="flex justify-between items-start mb-6 border-b-2 border-black pb-4 print:mb-2 print:pb-2" style={{ fontSize: '8pt' }}>
+        <div className="bg-white p-8 print:p-0 max-w-[21cm] mx-auto border print:border-none min-h-[29cm] flex flex-col">
+            {/* Official Report Header */}
+            <div className="flex justify-between items-start mb-4 border-b-2 border-black pb-2" style={{ fontSize: '8pt' }}>
                 <div className="font-bold space-y-0.5">
                     <p>المملكة العربية السعودية</p>
                     <p>وزارة التعليم</p>
@@ -135,7 +127,7 @@ const StudentReport: React.FC<Props> = ({ groupedData, students, onBack }) => {
                 </div>
                 <div className="text-center">
                     <img src={LOGO_URL} alt="Logo" className="h-14 mx-auto mb-1" />
-                    <h2 className="text-lg font-black underline" style={{ fontSize: '12pt' }}>سجل الانضباط الشامل للطالب</h2>
+                    <h2 className="font-black underline" style={{ fontSize: '12pt' }}>سجل متابعة انضباط الطالب</h2>
                 </div>
                 <div className="text-left font-bold space-y-0.5">
                     <p>التاريخ: {new Date().toLocaleDateString('ar-SA')}</p>
@@ -143,57 +135,57 @@ const StudentReport: React.FC<Props> = ({ groupedData, students, onBack }) => {
                 </div>
             </div>
 
-            {/* بيانات الطالب - تحسين الوضوح (اسم أسود عريض) */}
-            <div className="bg-gray-50 border-2 border-black p-4 mb-4 flex justify-between items-center print:p-2 print:mb-2">
+            {/* Student Info - Black & Bold for Clarity */}
+            <div className="border border-black p-3 mb-4 flex justify-between items-center bg-gray-50">
                 <div>
-                    <span className="block text-[8pt] text-gray-500 font-bold mb-1">اسم الطالب رباعي:</span>
-                    <span className="text-xl font-black text-black leading-none" style={{ fontSize: '16pt' }}>{studentStats?.studentName}</span>
+                    <span className="block text-[8pt] text-gray-500 font-bold">اسم الطالب :</span>
+                    <span className="font-black text-black" style={{ fontSize: '14pt' }}>{studentStats?.studentName}</span>
                 </div>
-                <div className="text-left">
-                    <span className="block text-[8pt] text-gray-500 font-bold mb-1">الصف / الفصل الدراسي:</span>
-                    <span className="text-lg font-black text-black">{currentMeta?.className || "—"} / {currentMeta?.section || "—"}</span>
+                <div className="text-left font-bold" style={{ fontSize: '9pt' }}>
+                    <p>الصف: {currentMeta?.className || "—"}</p>
+                    <p>الفصل: {currentMeta?.section || "—"}</p>
                 </div>
             </div>
 
-            {/* ملخص الإحصائيات */}
-            <div className="grid grid-cols-3 gap-2 mb-4 print:mb-2">
-                <div className="p-3 border border-black text-center bg-gray-50">
-                    <span className="block text-[7pt] font-black uppercase">إجمالي أيام الحضور</span>
-                    <span className="text-xl font-black">{studentStats?.totalDays}</span>
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="p-2 border border-black text-center">
+                    <span className="block text-[7pt] font-black uppercase">أيام الحضور</span>
+                    <span className="text-lg font-black">{studentStats?.totalDays}</span>
                 </div>
-                <div className="p-3 border border-black text-center bg-gray-50">
+                <div className="p-2 border border-black text-center">
                     <span className="block text-[7pt] font-black uppercase">مرات التأخير</span>
-                    <span className="text-xl font-black text-red-700">{studentStats?.lateDays}</span>
+                    <span className="text-lg font-black text-red-600">{studentStats?.lateDays}</span>
                 </div>
-                <div className="p-3 border border-black text-center bg-gray-50">
-                    <span className="block text-[7pt] font-black uppercase">إجمالي دقائق التأخير</span>
-                    <span className="text-xl font-black">{studentStats?.totalDelayMinutes} د</span>
+                <div className="p-2 border border-black text-center">
+                    <span className="block text-[7pt] font-black uppercase">إجمالي التأخير</span>
+                    <span className="text-lg font-black">{studentStats?.totalDelayMinutes} د</span>
                 </div>
             </div>
 
-            {/* جدول البيانات التفصيلي */}
+            {/* Table - No empty rows */}
             <div className="flex-grow">
-                <table className="w-full border-collapse border border-black">
+                <table className="w-full border-collapse border border-black" style={{ fontSize: '8pt' }}>
                     <thead>
                         <tr className="bg-gray-100 font-black">
                             <th className="p-1 border border-black text-center w-8">م</th>
                             <th className="p-1 border border-black text-right">التاريخ</th>
                             <th className="p-1 border border-black text-center">وقت الحضور</th>
-                            <th className="p-1 border border-black text-center">مدة التأخير</th>
+                            <th className="p-1 border border-black text-center">المدة</th>
                             <th className="p-1 border border-black text-center">الحالة</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {allStudentRecords.slice(0, 25).map((r, idx) => (
-                            <tr key={idx} className={`border border-black ${r.delayMinutes > 0 ? 'bg-red-50/20' : ''}`}>
+                        {allStudentRecords.map((r, idx) => (
+                            <tr key={idx} className={`border border-black ${r.delayMinutes > 0 ? 'bg-red-50/10' : ''}`}>
                                 <td className="p-1 border border-black text-center font-bold">{idx + 1}</td>
                                 <td className="p-1 border border-black text-right font-mono">{r.date}</td>
                                 <td className="p-1 border border-black text-center font-mono">{r.arrivalTime}</td>
                                 <td className="p-1 border border-black text-center font-bold">
-                                    {r.delayMinutes > 0 ? `${r.delayMinutes} دقيقة` : "—"}
+                                    {r.delayMinutes > 0 ? `${r.delayMinutes} د` : "—"}
                                 </td>
                                 <td className="p-1 border border-black text-center">
-                                    <span className={`text-[7pt] font-black ${r.delayMinutes > 0 ? 'text-red-700' : 'text-emerald-700'}`}>
+                                    <span className={`font-black ${r.delayMinutes > 0 ? 'text-red-700' : 'text-emerald-700'}`}>
                                         {r.delayMinutes > 0 ? 'متأخر' : 'منضبط'}
                                     </span>
                                 </td>
@@ -201,24 +193,21 @@ const StudentReport: React.FC<Props> = ({ groupedData, students, onBack }) => {
                         ))}
                     </tbody>
                 </table>
-                {allStudentRecords.length > 25 && (
-                    <p className="text-center py-2 text-[7pt] font-bold text-gray-400 no-print">... يتم عرض آخر ٢٥ سجلاً فقط لضمان جودة الطباعة ...</p>
-                )}
             </div>
 
-            {/* التوقيعات */}
-            <div className="mt-8 pt-8 flex justify-between items-end px-12 font-black border-t-2 border-black print:mt-4 print:pt-4" style={{ fontSize: '9pt' }}>
+            {/* Signatures */}
+            <div className="mt-6 pt-6 flex justify-between items-end px-12 font-black border-t border-black" style={{ fontSize: '9pt' }}>
                 <div className="text-center space-y-12">
-                    <p className="underline">وكيل شؤون الطلاب</p>
+                    <p className="underline underline-offset-4">وكيل شؤون الطلاب</p>
                     <p>..........................................</p>
                 </div>
-                <div className="text-center opacity-5 rotate-12 select-none grayscale no-print">
-                    <div className="w-20 h-20 border-2 border-black rounded-full flex items-center justify-center text-[6pt]">
+                <div className="text-center opacity-10 rotate-12 select-none grayscale no-print">
+                    <div className="w-20 h-20 border border-black rounded-full flex items-center justify-center text-[6pt]">
                         ختم المدرسة
                     </div>
                 </div>
                 <div className="text-center space-y-12">
-                    <p className="underline">مدير المدرسة</p>
+                    <p className="underline underline-offset-4">مدير المدرسة</p>
                     <p>..........................................</p>
                 </div>
             </div>
