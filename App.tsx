@@ -201,7 +201,7 @@ const App: React.FC = () => {
         {view === ViewMode.PrintReport && <PrintReport data={flatData} students={studentsMetadata} onBack={() => setView(ViewMode.History)} />}
         {view === ViewMode.MonthlyReport && <MonthlyReport data={flatData} students={studentsMetadata} onBack={() => setView(ViewMode.Dashboard)} />}
         {view === ViewMode.StudentReport && <StudentReport groupedData={data} students={studentsMetadata} onBack={() => setView(ViewMode.Dashboard)} />}
-        {view === ViewMode.ParentNotifications && <ParentNotifications data={flatData} onMarkNotified={markAsNotified} onBack={() => setView(ViewMode.Dashboard)} />}
+        {view === ViewMode.ParentNotifications && <ParentNotifications data={flatData} students={studentsMetadata} onMarkNotified={markAsNotified} onBack={() => setView(ViewMode.Dashboard)} />}
         {view === ViewMode.AllStudentsStats && <AllStudentsStats data={flatData} students={studentsMetadata} onBack={() => setView(ViewMode.Dashboard)} />}
       </main>
 
