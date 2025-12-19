@@ -22,9 +22,9 @@
             @page {
                 size: A4 portrait;
                 margin-top: 0.3cm !important;
-                margin-bottom: 0.5cm !important;
-                margin-left: 0.8cm !important;
-                margin-right: 0.8cm !important;
+                margin-bottom: 0.3cm !important;
+                margin-left: 0.7cm !important;
+                margin-right: 0.7cm !important;
             }
 
             body {
@@ -32,21 +32,30 @@
                 color: black !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+                margin: 0 !important;
+                padding: 0 !important;
             }
 
             .no-print { display: none !important; }
             .print-only { display: block !important; }
 
-            table {
-                width: 100% !important;
-                border-collapse: collapse !important;
-                border: 1.5pt solid black !important;
+            /* منع ظهور صفحات زائدة */
+            html, body {
+                height: auto !important;
+                overflow: visible !important;
             }
 
-            th, td {
-                border: 1pt solid black !important;
-                padding: 3pt 4pt !important;
-                color: black !important;
+            .shadow-2xl, .shadow-xl, .shadow-lg, .shadow-md, .shadow-sm, .shadow {
+                box-shadow: none !important;
+            }
+
+            table {
+                page-break-inside: auto;
+            }
+            
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
             }
         }
     </style>
