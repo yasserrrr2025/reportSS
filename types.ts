@@ -9,6 +9,9 @@ export interface StudentRecord {
   notified?: boolean; // Track if this delay has been included in a parent notice
 }
 
+// الهيكلية الجديدة: تجميع حسب معرف الطالب ثم التاريخ
+export type GroupedData = Record<string, Record<string, StudentRecord>>;
+
 export interface DailySummary {
   date: string;
   totalStudents: number;
