@@ -17,31 +17,101 @@
             font-family: 'Cairo', sans-serif;
             background-color: #f8fafc;
         }
+
+        /* تحسينات الطباعة الشاملة */
         @media print {
             @page {
-                size: A4;
-                margin: 0.5cm;
+                size: A4 portrait;
+                margin: 1cm;
             }
+
             body {
                 background-color: white !important;
+                color: black !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+                font-size: 12pt;
             }
-            .no-print { display: none !important; }
-            .print-only { display: block !important; }
-            .card { border: none !important; box-shadow: none !important; }
-            
-            /* إزالة أي خلفيات رمادية أو ظلال في الطباعة */
-            .shadow-2xl, .shadow-xl, .shadow-sm {
+
+            /* إخفاء العناصر غير الضرورية */
+            .no-print, 
+            header, 
+            footer, 
+            nav, 
+            button, 
+            input[type="file"],
+            .config-bar { 
+                display: none !important; 
+            }
+
+            .print-only { 
+                display: block !important; 
+            }
+
+            /* تصفير الحواف والظلال */
+            .shadow-2xl, .shadow-xl, .shadow-lg, .shadow-md, .shadow-sm, .shadow {
                 box-shadow: none !important;
+                border: 1px solid #eee !important;
+            }
+
+            .rounded-[2.5rem], .rounded-3xl, .rounded-2xl {
+                border-radius: 0.5rem !important;
+            }
+
+            /* تحسين الجداول للطباعة */
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                page-break-inside: auto;
+            }
+
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+
+            th, td {
+                border: 1px solid #ddd !important;
+                padding: 6pt !important;
+                color: black !important;
+            }
+
+            thead {
+                display: table-header-group;
+            }
+
+            /* منع تقطيع الأقسام المهمة */
+            .stats-grid, 
+            .signature-section, 
+            .report-header,
+            .summary-box {
+                page-break-inside: avoid !important;
+            }
+
+            /* التأكد من عرض النصوص بوضوح */
+            .text-slate-400, .text-slate-500 {
+                color: #666 !important;
             }
             
+            .text-emerald-800, .text-emerald-900, .text-slate-900 {
+                color: black !important;
+            }
+
             /* تحسين استغلال المساحة */
-            .print-tight {
-                padding: 0 !important;
+            .max-w-[21cm] {
+                max-width: 100% !important;
+                width: 100% !important;
                 margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+            }
+
+            /* فواصل الصفحات للإشعارات المتعددة */
+            .page-break {
+                page-break-before: always;
             }
         }
+
         .print-only { display: none; }
     </style>
 <script type="importmap">

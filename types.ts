@@ -33,5 +33,6 @@ export enum ViewMode {
   PrintReport = 'PRINT_REPORT',
   MonthlyReport = 'MONTHLY_REPORT',
   StudentReport = 'STUDENT_REPORT',
-  ParentNotifications = 'PARENT_NOTIFICATIONS'
+  ParentNotifications = 'PARENT_NOTIFICATIONS',
+  AllStudentsStats = 'ALL_STUDENTS_STATS'
 }

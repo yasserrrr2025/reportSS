@@ -219,25 +219,26 @@ const Dashboard: React.FC<Props> = ({ stats, data }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {stats.topDelayedStudents.length > 0 ? (
                     stats.topDelayedStudents.map((s, i) => (
-                        <div key={i} className="flex justify-between items-center p-5 bg-slate-50 rounded-[2rem] border border-slate-100 hover:bg-white hover:shadow-xl transition-all group border-r-8 border-r-rose-500">
-                            <div className="flex items-center gap-4">
-                                <div className="bg-rose-100 text-rose-700 w-12 h-12 rounded-2xl flex flex-col items-center justify-center border border-rose-200 group-hover:bg-rose-600 group-hover:text-white transition-all">
-                                    <span className="text-lg font-black leading-none">{s.count}</span>
-                                    <span className="text-[8px] font-black uppercase">مرات</span>
+                        <div key={i} className="flex justify-between items-center p-6 bg-slate-50 rounded-[2.5rem] border border-slate-100 hover:bg-white hover:shadow-xl transition-all group border-r-8 border-r-rose-600">
+                            <div className="flex items-center gap-5 flex-grow min-w-0">
+                                <div className="bg-rose-100 text-rose-700 w-14 h-14 rounded-2xl flex flex-col items-center justify-center border border-rose-200 group-hover:bg-rose-600 group-hover:text-white transition-all flex-shrink-0">
+                                    <span className="text-xl font-black leading-none">{s.count}</span>
+                                    <span className="text-[9px] font-black uppercase">مرات</span>
                                 </div>
-                                <div className="max-w-[150px]">
-                                    <span className="font-black text-slate-800 block text-sm truncate">{s.name}</span>
-                                    <p className="text-[10px] text-slate-400 font-bold">إجمالي: {formatMinutes(s.totalMinutes)}</p>
+                                <div className="flex-grow min-w-0">
+                                    <span className="font-black text-slate-900 block text-lg leading-tight mb-1">{s.name}</span>
+                                    <p className="text-xs text-slate-500 font-bold">إجمالي التأخير: <span className="text-rose-600">{formatMinutes(s.totalMinutes)}</span></p>
                                 </div>
                             </div>
-                            <div className="flex flex-col items-end">
-                                <span className={`text-[8px] font-black px-2 py-0.5 rounded-full mb-1 ${s.count > 5 ? 'bg-red-600 text-white' : 'bg-amber-100 text-amber-700'}`}>
-                                    {s.count > 5 ? 'حرج' : 'متابعة'}
+                            <div className="flex flex-col items-end flex-shrink-0">
+                                <span className={`text-[9px] font-black px-3 py-1 rounded-xl mb-2 ${s.count > 5 ? 'bg-red-600 text-white' : 'bg-amber-500 text-white'}`}>
+                                    {s.count > 5 ? 'حالة حرجة' : 'متابعة'}
                                 </span>
-                                <div className="flex -space-x-1 rtl:space-x-reverse opacity-40 group-hover:opacity-100 transition-opacity">
-                                    {[...Array(Math.min(s.count, 5))].map((_, i) => (
-                                        <div key={i} className="w-1.5 h-1.5 rounded-full bg-rose-500 border border-white"></div>
+                                <div className="flex -space-x-1.5 rtl:space-x-reverse opacity-40 group-hover:opacity-100 transition-opacity">
+                                    {[...Array(Math.min(s.count, 6))].map((_, i) => (
+                                        <div key={i} className="w-2 h-2 rounded-full bg-rose-500 border-2 border-white"></div>
                                     ))}
+                                    {s.count > 6 && <span className="text-[8px] font-bold text-rose-500 pr-1">+{s.count-6}</span>}
                                 </div>
                             </div>
                         </div>

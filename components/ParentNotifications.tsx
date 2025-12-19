@@ -25,9 +25,10 @@ const ParentNotifications: React.FC<Props> = ({ data, onMarkNotified, onBack }) 
       }
     });
 
-    // Filter students with 3 or more un-notified delays
+    // Modified: Show students with 3 or more and less than 10 un-notified delays
+    // This ensures the report fits perfectly on a single A4 page.
     return Array.from(map.values())
-      .filter(s => s.records.length >= 3)
+      .filter(s => s.records.length >= 3 && s.records.length < 10)
       .sort((a, b) => b.records.length - a.records.length);
   }, [data]);
 
@@ -79,7 +80,7 @@ const ParentNotifications: React.FC<Props> = ({ data, onMarkNotified, onBack }) 
             العودة للوحة التحكم
           </button>
           <h2 className="text-xl font-black text-slate-800">توليد إشعارات أولياء الأمور</h2>
-          <p className="text-xs text-slate-500 font-bold">يتم عرض الطلاب الذين لديهم (3) تأخرات أو أكثر ولم يتم إصدار إشعار لهم بعد</p>
+          <p className="text-xs text-slate-500 font-bold">يتم عرض الطلاب الذين لديهم (3 إلى 9) تأخرات لضمان الطباعة في صفحة واحدة</p>
         </div>
 
         <div className="flex gap-3">
@@ -117,7 +118,7 @@ const ParentNotifications: React.FC<Props> = ({ data, onMarkNotified, onBack }) 
               </th>
               <th className="p-4 font-bold text-slate-600 text-sm">اسم الطالب</th>
               <th className="p-4 font-bold text-slate-600 text-sm">رقم الهوية</th>
-              <th className="p-4 font-bold text-slate-600 text-sm text-center">عدد التأخرات غير المبلّغ عنها</th>
+              <th className="p-4 font-bold text-slate-600 text-sm text-center">عدد التأخرات</th>
               <th className="p-4 font-bold text-slate-600 text-sm">تاريخ آخر تأخر</th>
             </tr>
           </thead>
@@ -125,12 +126,12 @@ const ParentNotifications: React.FC<Props> = ({ data, onMarkNotified, onBack }) 
             {candidates.length > 0 ? candidates.map(c => (
               <tr key={c.id} className={`hover:bg-slate-50 transition ${selectedIds.includes(c.id) ? 'bg-emerald-50/30' : ''}`}>
                 <td className="p-4 text-center">
-                  <input type="checkbox" checked={selectedIds.includes(c.id)} onChange={() => handleSelect} onClick={(e) => { e.stopPropagation(); handleSelect(c.id); }} className="w-4 h-4 rounded text-emerald-600 cursor-pointer" />
+                  <input type="checkbox" checked={selectedIds.includes(c.id)} onChange={() => {}} onClick={(e) => { e.stopPropagation(); handleSelect(c.id); }} className="w-4 h-4 rounded text-emerald-600 cursor-pointer" />
                 </td>
                 <td className="p-4 font-bold text-slate-800">{c.name}</td>
                 <td className="p-4 font-mono text-slate-500">{c.id}</td>
                 <td className="p-4 text-center">
-                  <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-black">
+                  <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-700">
                     {c.records.length} تأخرات
                   </span>
                 </td>
@@ -144,7 +145,7 @@ const ParentNotifications: React.FC<Props> = ({ data, onMarkNotified, onBack }) 
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                    </div>
-                   <p className="text-slate-400 font-bold">لا يوجد طلاب مستحقين للإشعار حالياً (كل التأخرات مبلّغ عنها أو أقل من 3)</p>
+                   <p className="text-slate-400 font-bold">لا يوجد طلاب مستحقين للإشعار حالياً (بين 3 و 10 تأخرات)</p>
                 </td>
               </tr>
             )}
@@ -152,101 +153,103 @@ const ParentNotifications: React.FC<Props> = ({ data, onMarkNotified, onBack }) 
         </table>
       </div>
 
-      {/* Printing Templates (Hidden in UI) */}
+      {/* Printing Templates - Compact design to fit A4 perfectly */}
       <div className="hidden print:block space-y-0">
         {candidates.filter(c => selectedIds.includes(c.id)).map((student, sIdx) => (
-          <div key={student.id} className={`bg-white p-10 min-h-screen relative border-8 border-double border-slate-300 ${sIdx > 0 ? 'page-break-before' : ''}`} style={{ pageBreakBefore: 'always' }}>
-            {/* Header Area */}
-            <div className="text-center mb-8 border-b-2 border-slate-800 pb-4">
-               <h1 className="text-xl font-bold mb-2">إشعار تأخر طالب عن الطابور الصباحي والنشيد الوطني</h1>
-               <h2 className="text-lg font-bold">للعام الدراسي {new Date().getFullYear()} هـ</h2>
-            </div>
-
-            <div className="flex justify-between items-start mb-8">
-               <div className="text-right space-y-1 font-bold">
-                 <p>المكرم ولي أمر الطالب : <span className="border-b-2 border-dotted border-slate-800 px-4">{student.name}</span> حفظه الله</p>
+          <div key={student.id} className={`bg-white p-10 min-h-[29.7cm] relative border-[6px] border-double border-slate-800 ${sIdx > 0 ? 'page-break-before' : ''}`} style={{ pageBreakBefore: 'always' }}>
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6 border-b-2 border-slate-800 pb-4">
+               <div className="text-right space-y-1 font-bold text-[10px]">
+                 <p>المملكة العربية السعودية</p>
+                 <p>وزارة التعليم</p>
+                 <p>مدرسة حمزة بن عبدالمطلب</p>
                </div>
-               <div className="text-left text-xs font-bold text-slate-500">
+               <div className="text-center">
+                 <img src={LOGO_URL} alt="Logo" className="h-14 mb-1" />
+                 <h1 className="text-lg font-black">إشعار ولي أمر طالب متأخر</h1>
+               </div>
+               <div className="text-left text-[10px] font-bold">
                   <p>التاريخ: {new Date().toLocaleDateString('ar-SA')}</p>
+                  <p>رقم الإشعار: {student.id.slice(-4)}-{new Date().getMonth()+1}</p>
                </div>
             </div>
 
-            {/* Main Message */}
-            <div className="text-right leading-relaxed mb-10 font-bold text-slate-800">
-              <p className="mb-4">نحيطكم علماً بأن ابنكم تأخر عن الطابور الصباحي بشكل متكرر خلال الفترة من <span className="px-2 border-b border-slate-800">{student.records[student.records.length-1].date}</span> إلى فترة <span className="px-2 border-b border-slate-800">{student.records[0].date}</span> م، وهذا يؤثر على درجات المواظبة للطالب لهذا العام وكذلك لما للتأخر من أثر سلبي على ابنكم فإننا نأمل منكم الحضور في الوقت المحدد ومتابعة أسباب تأخر الطالب بشكل متكرر.</p>
+            {/* Content */}
+            <div className="text-right space-y-4 font-bold text-sm mb-6">
+               <p>المكرم ولي أمر الطالب : <span className="border-b border-slate-800 px-6 font-black">{student.name}</span> حفظه الله</p>
+               <p className="leading-relaxed">السلام عليكم ورحمة الله وبركاته وبعد ،،</p>
+               <p className="leading-relaxed">نود إفادتكم بأن ابنكم المذكور أعلاه قد تكرر تأخره عن الحضور للمدرسة (الطابور الصباحي) في الأيام الموضحة أدناه، ونظراً لأهمية الحضور المبكر لما له من أثر إيجابي على التحصيل العلمي، نأمل منكم التكرم بمتابعة أسباب هذا التأخير:</p>
             </div>
 
-            {/* Record Table */}
-            <table className="w-full border-collapse border-2 border-slate-800 mb-10">
+            {/* Table - Compacted */}
+            <table className="w-full border-collapse border-2 border-slate-800 mb-6">
               <thead>
                 <tr className="bg-slate-100">
-                  <th className="border border-slate-800 p-2 text-sm">اسم الطالب</th>
-                  <th className="border border-slate-800 p-2 text-sm">السجل المدني</th>
-                  <th className="border border-slate-800 p-2 text-sm">تاريخ التأخر</th>
-                  <th className="border border-slate-800 p-2 text-sm">وقت الوصول</th>
-                  <th className="border border-slate-800 p-2 text-sm">توقيع الطالب</th>
-                  <th className="border border-slate-800 p-2 text-sm">ملاحظات</th>
+                  <th className="border border-slate-800 p-2 text-xs">م</th>
+                  <th className="border border-slate-800 p-2 text-xs">تاريخ التأخر</th>
+                  <th className="border border-slate-800 p-2 text-xs">وقت الوصول</th>
+                  <th className="border border-slate-800 p-2 text-xs">ملاحظات</th>
                 </tr>
               </thead>
               <tbody>
                 {student.records.map((r, rIdx) => (
                   <tr key={rIdx}>
-                    {rIdx === 0 && <td rowSpan={student.records.length} className="border border-slate-800 p-2 text-center font-bold text-xs">{student.name}</td>}
-                    {rIdx === 0 && <td rowSpan={student.records.length} className="border border-slate-800 p-2 text-center font-mono text-xs">{student.id}</td>}
-                    <td className="border border-slate-800 p-2 text-center font-mono text-xs">{r.date}</td>
-                    <td className="border border-slate-800 p-2 text-center font-mono text-xs">{r.arrivalTime}</td>
-                    <td className="border border-slate-800 p-2"></td>
-                    <td className="border border-slate-800 p-2"></td>
+                    <td className="border border-slate-800 p-1.5 text-center text-xs">{rIdx + 1}</td>
+                    <td className="border border-slate-800 p-1.5 text-center font-mono text-xs">{r.date}</td>
+                    <td className="border border-slate-800 p-1.5 text-center font-mono text-xs text-red-700">{r.arrivalTime}</td>
+                    <td className="border border-slate-800 p-1.5"></td>
                   </tr>
                 ))}
-                <tr className="bg-slate-50 font-black">
-                  <td colSpan={2} className="border border-slate-800 p-2 text-center">مجموع أيام التأخر</td>
-                  <td colSpan={4} className="border border-slate-800 p-2 text-right px-10">{student.records.length} أيام</td>
-                </tr>
               </tbody>
             </table>
 
-            {/* Feedback Section */}
-            <div className="border-2 border-slate-800 mb-10">
-              <div className="bg-slate-200 p-2 text-center font-bold border-b-2 border-slate-800">الإفادة</div>
-              <div className="p-6 text-right space-y-4 font-bold">
-                 <p>المكرم / وكيل شؤون الطلاب</p>
-                 <p>نفيدكم بأن تأخر ابننا عن الطابور الصباحي بشكل مستمر كان للأسباب التالية:</p>
-                 <div className="border-b border-dotted border-slate-400 h-6"></div>
-                 <div className="border-b border-dotted border-slate-400 h-6"></div>
-                 <div className="border-b border-dotted border-slate-400 h-6"></div>
+            <div className="text-right font-bold text-[11px] leading-relaxed mb-6 bg-slate-50 p-3 border rounded-lg">
+               <p>نحيطكم علماً بأن تكرار التأخر يؤدي إلى حسم درجات من بند (المواظبة) وفق لائحة السلوك والمواظبة، ونهيب بكم الحرص على تواجد الطالب بالمدرسة بحد أقصى الساعة 7:15 صباحاً.</p>
+            </div>
+
+            {/* Guardian Feedback Section */}
+            <div className="border-2 border-slate-800 p-4 mb-6 rounded-lg bg-white shadow-inner">
+              <div className="text-center font-black border-b border-slate-800 pb-2 mb-3 text-sm">إفادة ولي الأمر</div>
+              <div className="space-y-3">
+                <p className="text-xs font-bold">أسباب التأخير المتكرر:</p>
+                <div className="border-b border-dotted border-slate-400 h-6"></div>
+                <div className="border-b border-dotted border-slate-400 h-6"></div>
+                <div className="flex justify-between items-end mt-4">
+                   <div className="text-right space-y-1">
+                      <p className="text-xs font-bold">الاسم: .......................................</p>
+                      <p className="text-xs font-bold">التوقيع: .....................................</p>
+                   </div>
+                   <div className="text-left">
+                      <p className="text-xs font-bold">رقم الجوال: .................................</p>
+                   </div>
+                </div>
               </div>
             </div>
 
-            {/* Signature Area */}
-            <div className="grid grid-cols-3 gap-4 mt-20 text-center font-bold">
-               <div className="space-y-10">
-                  <p className="underline underline-offset-8">ولي الأمر</p>
-                  <p>.......................................</p>
+            {/* Official Signatures - Bottom of page */}
+            <div className="grid grid-cols-3 gap-4 mt-auto pt-8 text-center font-black text-xs border-t-2 border-slate-100">
+               <div className="space-y-12">
+                  <p className="underline underline-offset-4">الموجه الطلابي</p>
+                  <p>........................</p>
                </div>
-               <div className="space-y-10">
-                  <p className="underline underline-offset-8">الموجه الطلابي</p>
-                  <p>.......................................</p>
+               <div className="flex flex-col items-center justify-center opacity-30 select-none">
+                  <div className="w-24 h-24 border-4 border-double border-slate-300 rounded-full flex items-center justify-center rotate-12">
+                    <span className="text-[10px] text-center">ختم<br/>المدرسة</span>
+                  </div>
                </div>
-               <div className="space-y-10">
-                  <p className="underline underline-offset-8">مدير المدرسة</p>
-                  <p>.......................................</p>
+               <div className="space-y-12">
+                  <p className="underline underline-offset-4">مدير المدرسة</p>
+                  <p>........................</p>
                </div>
-            </div>
-
-            {/* Footer Ministry Logo */}
-            <div className="absolute bottom-10 left-10">
-               <img src={LOGO_URL} alt="Logo" className="h-16 opacity-30 grayscale" />
             </div>
           </div>
         ))}
       </div>
-      
       <style>{`
         @media print {
           body { background-color: white !important; }
           .page-break-before { page-break-before: always !important; }
-          @page { margin: 0.5cm; }
+          @page { margin: 0.5cm; size: A4 portrait; }
         }
       `}</style>
     </div>

@@ -9,6 +9,7 @@ import PrintReport from './components/PrintReport';
 import MonthlyReport from './components/MonthlyReport';
 import StudentReport from './components/StudentReport';
 import ParentNotifications from './components/ParentNotifications';
+import AllStudentsStats from './components/AllStudentsStats';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewMode>(ViewMode.Dashboard);
@@ -141,6 +142,7 @@ const App: React.FC = () => {
             <button onClick={() => setView(ViewMode.Dashboard)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.Dashboard ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>لوحة التحكم</button>
             <button onClick={() => setView(ViewMode.Upload)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.Upload ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>رفع ملف</button>
             <button onClick={() => setView(ViewMode.History)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.History ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>السجل</button>
+            <button onClick={() => setView(ViewMode.AllStudentsStats)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.AllStudentsStats ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>إحصائيات الطلاب</button>
             <button onClick={() => setView(ViewMode.MonthlyReport)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.MonthlyReport ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>التقرير الشهري</button>
             <button onClick={() => setView(ViewMode.StudentReport)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.StudentReport ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>تقرير طالب</button>
             <button onClick={() => setView(ViewMode.ParentNotifications)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.ParentNotifications ? 'bg-red-600 text-white' : 'text-red-600 hover:bg-red-50 border border-red-100'}`}>إشعارات ولي الأمر</button>
@@ -156,6 +158,7 @@ const App: React.FC = () => {
         {view === ViewMode.MonthlyReport && <MonthlyReport data={flatData} onBack={() => setView(ViewMode.Dashboard)} />}
         {view === ViewMode.StudentReport && <StudentReport groupedData={data} onBack={() => setView(ViewMode.Dashboard)} />}
         {view === ViewMode.ParentNotifications && <ParentNotifications data={flatData} onMarkNotified={markAsNotified} onBack={() => setView(ViewMode.Dashboard)} />}
+        {view === ViewMode.AllStudentsStats && <AllStudentsStats data={flatData} onBack={() => setView(ViewMode.Dashboard)} />}
       </main>
 
       <footer className="bg-white border-t py-4 no-print text-center text-slate-400 text-sm">
