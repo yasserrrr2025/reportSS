@@ -103,67 +103,73 @@ export const parseAllSheetsExcel = (workbook: any): StudentMetadata[] => {
   const allStudents: StudentMetadata[] = [];
   if (typeof XLSX === 'undefined' || !XLSX.utils) return [];
 
+  // 1. الدوران على كافة صفحات الملف (مهما كان عددها)
   workbook.SheetNames.forEach((sheetName: string) => {
     const sheet = workbook.Sheets[sheetName];
-    // تحويل البيانات لمصفوفة خام مع الحفاظ على كل الخلايا
+    // تحويل البيانات لمصفوفة خام مع الحفاظ على كل الخلايا لضبط المسافات
     const data: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
     
     if (data.length < 15) return;
 
-    // 1. استخراج الصف (بحث عن سطر يحتوي على كلمة "الثانوي")
+    // 2. استخراج "الصف" (البحث عن كلمة الثانوي)
     let currentGrade = "غير محدد";
     const gradeRow = data.slice(0, 15).find(row => row.some(cell => cell?.toString().includes("الثانوي")));
     if (gradeRow) {
       currentGrade = gradeRow.find(cell => cell?.toString().includes("الثانوي"))?.toString() || currentGrade;
     }
 
-    // 2. استخراج الفصل (بحث عن سطر يحتوي على كلمة "الفصل")
+    // 3. استخراج "الفصل" (البحث عن كلمة الفصل)
     let currentSection = "غير محدد";
-    const sectionRowIdx = data.findIndex(row => row.some(cell => cell?.toString().includes("الفصل")));
-    if (sectionRowIdx !== -1) {
-      const sRow = data[sectionRowIdx];
-      const sectionCell = sRow.find(cell => !isNaN(Number(cell)) && cell !== "");
+    const sectionRow = data.slice(0, 20).find(row => row.some(cell => cell?.toString().includes("الفصل")));
+    if (sectionRow) {
+      const sectionCell = sectionRow.find(cell => !isNaN(Number(cell)) && cell !== "");
       currentSection = sectionCell?.toString() || currentSection;
     }
 
-    // تنظيف النصوص
     currentGrade = currentGrade.replace(/الصف|:|/g, "").trim();
     currentSection = currentSection.replace(/الفصل|:|/g, "").trim();
 
-    // 3. تحديد بداية جدول الطلاب (السطر الذي يحتوي على "اسم الطالب")
+    // 4. تحديد سطر "اسم الطالب" لتحديد الأعمدة
     const headerRowIdx = data.findIndex(row => row.some(cell => cell?.toString().includes("اسم الطالب")));
     if (headerRowIdx === -1) return;
 
     const headerRow = data[headerRowIdx];
     const nameColIdx = headerRow.findIndex(c => c?.toString().includes("اسم الطالب"));
+    
+    // تحديد عمود رخصة الإقامة
+    let idColIdx = headerRow.findIndex(c => c?.toString().includes("رقم رخصة الاقامة"));
 
-    // 4. استخراج الطلاب
+    // 5. استخراج كافة الطلاب في الشيت الحالي
     for (let i = headerRowIdx + 1; i < data.length; i++) {
       const row = data[i];
       if (!row || !row[nameColIdx]) continue;
 
       const studentName = row[nameColIdx]?.toString().trim();
-      // استبعاد الترويسات المتكررة أو الأسماء القصيرة جداً
+      // تخطي الأسطر التي لا تحتوي على أسماء حقيقية أو تكرار للترويسة
       if (studentName.length < 5 || studentName.includes("اسم الطالب")) continue;
 
-      // التعديل هنا: البحث عن أي خلية تتكون من 10 أرقام (من 0 إلى 9)
-      const studentId = row.find(cell => {
-        const val = cell?.toString().replace(/\s/g, "") || "";
-        // التعبير النمطي الجديد يبحث عن 10 أرقام بغض النظر عن البداية
-        return /^\d{10}$/.test(val); 
-      })?.toString().replace(/\s/g, "");
-
-      if (studentId) {
-        allStudents.push({
-          id: studentId,
-          name: studentName,
-          className: currentGrade,
-          section: currentSection
+      // منطق الهوية: نبحث عن القيمة في عمود "رقم رخصة الاقامة"
+      // إذا كان العمود فارغاً، نبحث في السطر عن أي خلية رقمية لا تحتوي على "/"
+      let studentId = row[idColIdx]?.toString().replace(/\s/g, "") || "";
+      
+      if (!studentId || isNaN(Number(studentId)) || studentId.includes("/")) {
+        const potentialId = row.find(cell => {
+          const val = cell?.toString().replace(/\s/g, "") || "";
+          return val.length > 0 && /^\d+$/.test(val) && !val.includes("/");
         });
+        studentId = potentialId?.toString().replace(/\s/g, "") || "";
       }
+
+      // إضافة الطالب للقائمة
+      allStudents.push({
+        id: studentId || `no-id-${i}-${sheetName}`, // ضمان عدم ضياع الطالب إذا لم تتوفر هوية
+        name: studentName,
+        className: currentGrade,
+        section: currentSection
+      });
     }
   });
 
-  // إزالة التكرار لضمان دقة القائمة
-  return Array.from(new Map(allStudents.map(s => [s.id, s])).values());
+  // 6. إزالة التكرار بناءً على الهوية والاسم معاً لضمان الدقة الكاملة
+  return Array.from(new Map(allStudents.map(s => [s.id + s.name, s])).values());
 };
