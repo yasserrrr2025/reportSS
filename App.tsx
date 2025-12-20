@@ -171,42 +171,77 @@ const App: React.FC = () => {
     });
   };
 
+  const NavItem = ({ mode, label, icon, color = "emerald" }: { mode: ViewMode, label: string, icon: React.ReactNode, color?: string }) => {
+    const isActive = view === mode;
+    return (
+      <button 
+        onClick={() => setView(mode)}
+        className={`flex items-center gap-3 px-5 py-3 rounded-2xl transition-all duration-300 font-bold text-sm ${
+          isActive 
+          ? `bg-${color}-600 text-white shadow-lg shadow-${color}-200 scale-105` 
+          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+        }`}
+      >
+        {icon}
+        <span>{label}</span>
+      </button>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <header className="bg-white shadow-sm border-b no-print">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-4">
-            <img src={LOGO_URL} alt="Logo" className="h-12 w-auto" />
-            <h1 className="text-xl md:text-2xl font-bold text-emerald-800">نظام حضور الطلاب</h1>
+    <div className="min-h-screen bg-[#FDFDFD] flex flex-col">
+      {/* Top Banner (No Print) */}
+      <header className="bg-white/80 backdrop-blur-md sticky top-0 z-[100] border-b border-slate-100 no-print">
+        <div className="max-w-[1600px] mx-auto px-6 py-4 flex flex-col xl:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-5">
+            <div className="bg-emerald-50 p-2 rounded-2xl border border-emerald-100 shadow-sm">
+                <img src={LOGO_URL} alt="Logo" className="h-10 w-auto object-contain" />
+            </div>
+            <div>
+                <h1 className="text-xl font-black text-slate-900 tracking-tight">نظام متابعة الانضباط الرقمي</h1>
+                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.2em]">Hamza Bin Abdulmuttalib School</p>
+            </div>
           </div>
-          <nav className="flex flex-wrap justify-center gap-2">
-            <button onClick={() => setView(ViewMode.Dashboard)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.Dashboard ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>لوحة التحكم</button>
-            <button onClick={() => setView(ViewMode.StudentManagement)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.StudentManagement || view === ViewMode.StudentDatabase ? 'bg-amber-600 text-white' : 'text-amber-600 hover:bg-amber-50 border border-amber-100'}`}>قاعدة الطلاب</button>
-            <button onClick={() => setView(ViewMode.Upload)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.Upload ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>رفع حضور يومي</button>
-            <button onClick={() => setView(ViewMode.History)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.History ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>السجل</button>
-            <button onClick={() => setView(ViewMode.AllStudentsStats)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.AllStudentsStats ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>إحصائيات الطلاب</button>
-            <button onClick={() => setView(ViewMode.MonthlyReport)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.MonthlyReport ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>التقرير الشهري</button>
-            <button onClick={() => setView(ViewMode.StudentReport)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.StudentReport ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>تقرير طالب</button>
-            <button onClick={() => setView(ViewMode.ParentNotifications)} className={`px-3 py-2 rounded-md transition text-sm font-bold ${view === ViewMode.ParentNotifications ? 'bg-red-600 text-white' : 'text-red-600 hover:bg-red-50 border border-red-100'}`}>إشعارات ولي الأمر</button>
+          
+          <nav className="flex flex-wrap justify-center items-center gap-2">
+            <NavItem mode={ViewMode.Dashboard} label="الرئيسية" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>} />
+            <NavItem mode={ViewMode.StudentManagement} color="amber" label="الطلاب" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>} />
+            <div className="w-px h-6 bg-slate-200 mx-2 hidden md:block"></div>
+            <NavItem mode={ViewMode.Upload} label="رصد يومي" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>} />
+            <NavItem mode={ViewMode.History} label="السجل" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2H5" /></svg>} />
+            <NavItem mode={ViewMode.AllStudentsStats} label="إحصائيات" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>} />
+            <NavItem mode={ViewMode.MonthlyReport} label="شهري" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>} />
+            <NavItem mode={ViewMode.StudentReport} label="بحث طالب" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>} />
+            <NavItem mode={ViewMode.ParentNotifications} color="rose" label="إشعارات" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>} />
           </nav>
         </div>
       </header>
 
-      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-        {view === ViewMode.Dashboard && <Dashboard stats={stats} data={flatData} students={studentsMetadata} />}
-        {view === ViewMode.StudentDatabase && <StudentListUpload onUpdate={handleUpdateStudentList} onBack={() => setView(ViewMode.StudentManagement)} />}
-        {view === ViewMode.StudentManagement && <StudentManagement students={studentsMetadata} onDelete={deleteStudentFromMetadata} onClear={clearStudentDatabase} onUpload={() => setView(ViewMode.StudentDatabase)} />}
-        {view === ViewMode.Upload && <UploadSection onUpload={handleUpload} />}
-        {view === ViewMode.History && <HistoryTable data={flatData} students={studentsMetadata} onDelete={deleteRecord} onPrint={() => setView(ViewMode.PrintReport)} />}
-        {view === ViewMode.PrintReport && <PrintReport data={flatData} students={studentsMetadata} onBack={() => setView(ViewMode.History)} />}
-        {view === ViewMode.MonthlyReport && <MonthlyReport data={flatData} students={studentsMetadata} onBack={() => setView(ViewMode.Dashboard)} />}
-        {view === ViewMode.StudentReport && <StudentReport groupedData={data} students={studentsMetadata} onBack={() => setView(ViewMode.Dashboard)} />}
-        {view === ViewMode.ParentNotifications && <ParentNotifications data={flatData} students={studentsMetadata} onMarkNotified={markAsNotified} onBack={() => setView(ViewMode.Dashboard)} />}
-        {view === ViewMode.AllStudentsStats && <AllStudentsStats data={flatData} students={studentsMetadata} onBack={() => setView(ViewMode.Dashboard)} />}
+      <main className="flex-grow max-w-[1600px] mx-auto px-6 py-10 w-full animate-in fade-in slide-in-from-bottom-2 duration-700">
+        <div className="bg-white/40 rounded-[3rem] p-2">
+            {view === ViewMode.Dashboard && <Dashboard stats={stats} data={flatData} students={studentsMetadata} />}
+            {view === ViewMode.StudentDatabase && <StudentListUpload onUpdate={handleUpdateStudentList} onBack={() => setView(ViewMode.StudentManagement)} />}
+            {view === ViewMode.StudentManagement && <StudentManagement students={studentsMetadata} onDelete={deleteStudentFromMetadata} onClear={clearStudentDatabase} onUpload={() => setView(ViewMode.StudentDatabase)} />}
+            {view === ViewMode.Upload && <UploadSection onUpload={handleUpload} />}
+            {view === ViewMode.History && <HistoryTable data={flatData} students={studentsMetadata} onDelete={deleteRecord} onPrint={() => setView(ViewMode.PrintReport)} />}
+            {view === ViewMode.PrintReport && <PrintReport data={flatData} students={studentsMetadata} onBack={() => setView(ViewMode.History)} />}
+            {view === ViewMode.MonthlyReport && <MonthlyReport data={flatData} students={studentsMetadata} onBack={() => setView(ViewMode.Dashboard)} />}
+            {view === ViewMode.StudentReport && <StudentReport groupedData={data} students={studentsMetadata} onBack={() => setView(ViewMode.Dashboard)} />}
+            {view === ViewMode.ParentNotifications && <ParentNotifications data={flatData} students={studentsMetadata} onMarkNotified={markAsNotified} onBack={() => setView(ViewMode.Dashboard)} />}
+            {view === ViewMode.AllStudentsStats && <AllStudentsStats data={flatData} students={studentsMetadata} onBack={() => setView(ViewMode.Dashboard)} />}
+        </div>
       </main>
 
-      <footer className="bg-white border-t py-4 no-print text-center text-slate-400 text-sm">
-        جميع الحقوق محفوظة &copy; {new Date().getFullYear()}
+      <footer className="bg-white border-t border-slate-100 py-6 no-print">
+        <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-slate-400 font-bold text-xs gap-4">
+            <p>نظام إدارة الحضور الرقمي &copy; {new Date().getFullYear()} - مدرسة حمزة بن عبدالمطلب</p>
+            <div className="flex gap-6">
+                <a href="#" className="hover:text-emerald-600 transition-colors">الدعم الفني</a>
+                <a href="#" className="hover:text-emerald-600 transition-colors">سياسة الخصوصية</a>
+                <span className="text-slate-200">|</span>
+                <span className="text-emerald-600">الإصدار 2.5.0</span>
+            </div>
+        </div>
       </footer>
     </div>
   );
