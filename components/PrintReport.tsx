@@ -97,17 +97,17 @@ const PrintReport: React.FC<Props> = ({ data, students, onBack }) => {
             </div>
         </div>
 
-        {/* Attendance Table */}
-        <table className="w-full border-collapse border border-slate-300">
+        {/* Attendance Table - Font size reduced to 8pt */}
+        <table className="w-full border-collapse border border-slate-300" style={{ fontSize: '8pt' }}>
           <thead>
             <tr className="bg-emerald-700 text-white print:bg-emerald-700 print:text-white">
-              <th className="border border-slate-300 p-3 text-right">م</th>
-              <th className="border border-slate-300 p-3 text-right">رقم الهوية</th>
-              <th className="border border-slate-300 p-3 text-right">اسم الطالب</th>
-              <th className="border border-slate-300 p-3 text-center">الصف</th>
-              <th className="border border-slate-300 p-3 text-center">الفصل</th>
-              <th className="border border-slate-300 p-3 text-center">وقت الحضور</th>
-              <th className="border border-slate-300 p-3 text-center">مدة التأخير</th>
+              <th className="border border-slate-300 p-2 text-right">م</th>
+              <th className="border border-slate-300 p-2 text-right">رقم الهوية</th>
+              <th className="border border-slate-300 p-2 text-right">اسم الطالب</th>
+              <th className="border border-slate-300 p-2 text-center">الصف</th>
+              <th className="border border-slate-300 p-2 text-center">الفصل</th>
+              <th className="border border-slate-300 p-2 text-center">وقت الحضور</th>
+              <th className="border border-slate-300 p-2 text-center">مدة التأخير</th>
             </tr>
           </thead>
           <tbody>
@@ -116,13 +116,13 @@ const PrintReport: React.FC<Props> = ({ data, students, onBack }) => {
                 const meta = studentMap.get(r.id);
                 return (
                   <tr key={idx} className={r.delayMinutes > 0 ? "bg-amber-50" : ""}>
-                    <td className="border border-slate-300 p-3 text-right">{idx + 1}</td>
-                    <td className="border border-slate-300 p-3 text-right font-mono">{r.id}</td>
-                    <td className="border border-slate-300 p-3 text-right font-bold">{r.name}</td>
-                    <td className="border border-slate-300 p-3 text-center text-sm">{meta?.className || "—"}</td>
-                    <td className="border border-slate-300 p-3 text-center text-sm">{meta?.section || "—"}</td>
-                    <td className="border border-slate-300 p-3 text-center font-mono">{r.arrivalTime}</td>
-                    <td className="border border-slate-300 p-3 text-center">
+                    <td className="border border-slate-300 p-2 text-right">{idx + 1}</td>
+                    <td className="border border-slate-300 p-2 text-right font-mono">{r.id}</td>
+                    <td className="border border-slate-300 p-2 text-right font-bold">{r.name}</td>
+                    <td className="border border-slate-300 p-2 text-center">{meta?.className || "—"}</td>
+                    <td className="border border-slate-300 p-2 text-center">{meta?.section || "—"}</td>
+                    <td className="border border-slate-300 p-2 text-center font-mono">{r.arrivalTime}</td>
+                    <td className="border border-slate-300 p-2 text-center">
                       {r.delayMinutes > 0 ? (
                         <span className="font-bold text-red-600">{formatMinutes(r.delayMinutes)}</span>
                       ) : (

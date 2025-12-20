@@ -29,14 +29,13 @@ const Dashboard: React.FC<Props> = ({ stats, data, students }) => {
   // استخراج تفاصيل يوم الذروة بشكل أفضل
   const busiestDayDetails = useMemo(() => {
     if (!stats.busiestDay || stats.busiestDay === "لا يوجد بيانات") {
-      return { dayName: "—", fullDate: "لا توجد سجلات" };
+      return { dayName: "—", fullDate: "لا توجد سجلات", rawDate: "" };
     }
-    // التنسيق المتوقع من App.tsx هو "اليوم (YYYY-MM-DD)"
     const match = stats.busiestDay.match(/(.+) \((.+)\)/);
     if (match) {
-      return { dayName: match[1], fullDate: match[2] };
+      return { dayName: match[1], fullDate: match[2], rawDate: match[2] };
     }
-    return { dayName: stats.busiestDay, fullDate: "" };
+    return { dayName: stats.busiestDay, fullDate: "", rawDate: "" };
   }, [stats.busiestDay]);
 
   // حساب توزيع الانضباط بناءً على إجمالي قاعدة البيانات
@@ -58,7 +57,7 @@ const Dashboard: React.FC<Props> = ({ stats, data, students }) => {
     return Math.round((onTime / total) * 100);
   }, [distributionData, students]);
 
-  // ملخص البيانات لكل يوم (للجدول الجديد)
+  // ملخص البيانات لكل يوم (للجدول والرسوم البيانية)
   const dailySummaryTable = useMemo(() => {
     const days: Record<string, { date: string, dayName: string, totalStudents: number, lateCount: number, totalMinutes: number }> = {};
     
@@ -77,6 +76,11 @@ const Dashboard: React.FC<Props> = ({ stats, data, students }) => {
 
     return Object.values(days).sort((a, b) => b.date.localeCompare(a.date));
   }, [data]);
+
+  // بيانات الأسبوع الأخير للمخطط الشريطي
+  const weeklyData = useMemo(() => {
+    return [...dailySummaryTable].reverse().slice(-7);
+  }, [dailySummaryTable]);
 
   const trendData = useMemo(() => {
     return [...dailySummaryTable].reverse().slice(-10).map(d => ({
@@ -114,7 +118,6 @@ const Dashboard: React.FC<Props> = ({ stats, data, students }) => {
           </div>
           
           <div className="flex gap-4">
-            {/* بطاقة يوم الذروة المحسنة */}
             <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/10 text-center min-w-[220px]">
                 <p className="text-[10px] font-black text-rose-400 uppercase mb-2 tracking-widest">اليوم الأكثر تأخيراً</p>
                 <p className="text-2xl font-black text-white mb-1">{busiestDayDetails.dayName}</p>
@@ -131,27 +134,42 @@ const Dashboard: React.FC<Props> = ({ stats, data, students }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Chart */}
+        {/* Weekly Bar Chart - NEW SECTION */}
         <div className="lg:col-span-2 bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
           <div className="flex justify-between items-center mb-8">
-            <h4 className="font-black text-slate-900 text-2xl">التوجه الزمني للتأخير</h4>
-            <span className="text-xs font-bold text-slate-400">آخر ١٠ أيام مرصودة</span>
+            <h4 className="font-black text-slate-900 text-2xl">حالات التأخير خلال الأسبوع الأخير</h4>
+            <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-indigo-500 rounded-full"></span>
+                    <span className="text-[10px] font-bold text-slate-400">يوم عادي</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-rose-500 rounded-full"></span>
+                    <span className="text-[10px] font-bold text-slate-400">يوم الذروة</span>
+                </div>
+            </div>
           </div>
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData}>
-                <defs>
-                  <linearGradient id="colorLate" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
+              <BarChart data={weeklyData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="date" tick={{fontSize: 10, fontWeight: '900', fill: '#94a3b8'}} axisLine={false} />
+                <XAxis dataKey="dayName" tick={{fontSize: 12, fontWeight: '900', fill: '#64748b'}} axisLine={false} />
                 <YAxis tick={{fontSize: 10, fontWeight: '900', fill: '#94a3b8'}} axisLine={false} />
-                <Tooltip contentStyle={{borderRadius: '1.5rem', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)'}} />
-                <Area type="monotone" dataKey="late" stroke="#f43f5e" fill="url(#colorLate)" strokeWidth={4} name="المتأخرون" />
-              </AreaChart>
+                <Tooltip 
+                    cursor={{fill: '#f8fafc'}}
+                    contentStyle={{borderRadius: '1.5rem', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', padding: '15px'}}
+                    itemStyle={{fontWeight: '900', fontSize: '14px'}}
+                    labelStyle={{fontWeight: '900', marginBottom: '5px', color: '#64748b'}}
+                />
+                <Bar dataKey="lateCount" name="عدد المتأخرين" radius={[10, 10, 0, 0]}>
+                  {weeklyData.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={entry.date === busiestDayDetails.rawDate ? COLORS.rose : COLORS.indigo} 
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -201,7 +219,7 @@ const Dashboard: React.FC<Props> = ({ stats, data, students }) => {
         </div>
       </div>
 
-      {/* جدول الأيام المسجلة المحدث */}
+      {/* جدول الأيام المسجلة */}
       <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden">
         <div className="flex items-center justify-between mb-8 border-b border-slate-50 pb-6">
             <div>
@@ -226,7 +244,6 @@ const Dashboard: React.FC<Props> = ({ stats, data, students }) => {
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                     {dailySummaryTable.map((day, idx) => {
-                        // النسبة الآن تعتمد على إجمالي الطلاب في قاعدة البيانات
                         const latePercentOfTotal = Math.round((day.lateCount / totalStudentsInDatabase) * 100);
                         return (
                             <tr key={idx} className="hover:bg-slate-50 transition-colors group">

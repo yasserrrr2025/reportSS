@@ -95,10 +95,6 @@ export const parseRawText = (text: string, defaultDate: string, startTime: strin
  * 4- عدم تجاهل أي طالب (البدء من السطر 22 مباشرة).
  */
 // Fix: Removed duplicate import of StudentMetadata and declaration of XLSX which were causing errors
-import { StudentMetadata } from '../types';
-
-declare const XLSX: any;
-
 export const parseAllSheetsExcel = (workbook: any): StudentMetadata[] => {
   const allStudents: StudentMetadata[] = [];
   if (typeof XLSX === 'undefined' || !XLSX.utils) return [];
