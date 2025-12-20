@@ -95,6 +95,10 @@ export const parseRawText = (text: string, defaultDate: string, startTime: strin
  * 4- عدم تجاهل أي طالب (البدء من السطر 22 مباشرة).
  */
 // Fix: Removed duplicate import of StudentMetadata and declaration of XLSX which were causing errors
+import { StudentMetadata } from '../types';
+
+declare const XLSX: any;
+
 export const parseAllSheetsExcel = (workbook: any): StudentMetadata[] => {
   const allStudents: StudentMetadata[] = [];
   if (typeof XLSX === 'undefined' || !XLSX.utils) return [];
@@ -108,9 +112,8 @@ export const parseAllSheetsExcel = (workbook: any): StudentMetadata[] => {
 
     // 1. استخراج الصف (بحث عن سطر يحتوي على كلمة "الثانوي")
     let currentGrade = "غير محدد";
-    const gradeRow = data.slice(0, 10).find(row => row.some(cell => cell?.toString().includes("الثانوي")));
+    const gradeRow = data.slice(0, 15).find(row => row.some(cell => cell?.toString().includes("الثانوي")));
     if (gradeRow) {
-      // جلب الخلية التي تحتوي على كلمة "الثانوي" تحديداً
       currentGrade = gradeRow.find(cell => cell?.toString().includes("الثانوي"))?.toString() || currentGrade;
     }
 
@@ -119,7 +122,6 @@ export const parseAllSheetsExcel = (workbook: any): StudentMetadata[] => {
     const sectionRowIdx = data.findIndex(row => row.some(cell => cell?.toString().includes("الفصل")));
     if (sectionRowIdx !== -1) {
       const sRow = data[sectionRowIdx];
-      // في نظام نور، رقم الفصل غالباً يكون في خلية بجانب كلمة "الفصل" أو في نفس السطر
       const sectionCell = sRow.find(cell => !isNaN(Number(cell)) && cell !== "");
       currentSection = sectionCell?.toString() || currentSection;
     }
@@ -144,10 +146,11 @@ export const parseAllSheetsExcel = (workbook: any): StudentMetadata[] => {
       // استبعاد الترويسات المتكررة أو الأسماء القصيرة جداً
       if (studentName.length < 5 || studentName.includes("اسم الطالب")) continue;
 
-      // البحث عن الهوية (أي خلية في السطر تتكون من 10 أرقام وتبدأ بـ 1 أو 2)
+      // التعديل هنا: البحث عن أي خلية تتكون من 10 أرقام (من 0 إلى 9)
       const studentId = row.find(cell => {
         const val = cell?.toString().replace(/\s/g, "") || "";
-        return /^[12]\d{9}$/.test(val);
+        // التعبير النمطي الجديد يبحث عن 10 أرقام بغض النظر عن البداية
+        return /^\d{10}$/.test(val); 
       })?.toString().replace(/\s/g, "");
 
       if (studentId) {
